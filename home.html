@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Relational N-Back — Lures + Conjunctive Mode</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{ --bg:#0f1220; --panel:#171b2e; --muted:#7e86a3; --text:#eef2ff; --accent:#5ee1a2; --accent-2:#77b5ff; --warn:#ffb454; --danger:#ff6b6b; }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{ margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji;
+      color:var(--text);
+      background: radial-gradient(1200px 700px at 10% -10%, #1b2140 0%, var(--bg) 45%), linear-gradient(180deg, #101428, #0b0e1b);
+      display:flex; flex-direction:column; align-items:center;}
+    header{ width:100%; max-width:1100px; padding:18px 20px; display:flex; gap:16px; align-items:center; justify-content:space-between;}
+    header h1{font-size:20px; margin:0; letter-spacing:0.3px}
+    header .links{display:flex; gap:10px; align-items:center}
+    .chip{ font-size:12px; color:var(--muted); padding:6px 10px; border:1px solid #283054; border-radius:999px; text-decoration:none;
+      display:inline-flex; align-items:center; gap:6px; background:#12162a99; backdrop-filter: blur(6px);}
+    .container{ width:100%; max-width:1100px; padding:0 20px 30px; display:grid; grid-template-columns: 320px 1fr; gap:20px;}
+    @media (max-width: 960px){ .container{grid-template-columns:1fr} }
+    .card{ background:linear-gradient(180deg, #151a33, #11162c); border:1px solid #262c4a; border-radius:14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03); overflow:hidden;}
+    .card h2{ margin:0; padding:14px 16px; font-size:14px; text-transform:uppercase; letter-spacing:1.2px; color:#b9c3ea;
+      border-bottom:1px solid #262c4a; background:#121733;}
+    .card .content{padding:14px 16px}
+    .grid{display:grid; gap:8px} .grid.cols-2{grid-template-columns:1fr 1fr}
+    label{font-size:12px; color:#b6bdd9; display:block; margin-bottom:6px}
+    input[type="number"], input[type="text"]{ width:100%; padding:10px 12px; background:#0e1230; color:var(--text);
+      border:1px solid #2c375f; border-radius:10px; outline:none;}
+    .row{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .hint{font-size:12px; color:var(--muted)}
+    .switch{display:inline-flex; align-items:center; gap:10px; cursor:pointer; user-select:none; font-size:13px; color:#d7defa}
+    .switch input{display:none}
+    .toggle{ width:44px; height:24px; background:#0e1230; border:1px solid #2c375f; border-radius:999px; position:relative; transition:.2s ease all;}
+    .toggle::after{ content:""; width:18px; height:18px; background:#dfe7ff; border-radius:50%; position:absolute; top:2px; left:2px; transition:.2s ease all; box-shadow: 0 2px 6px rgba(0,0,0,0.35);}
+    .switch input:checked + .toggle{background:linear-gradient(90deg, var(--accent-2), var(--accent)); border-color:transparent}
+    .switch input:checked + .toggle::after{left:24px; background:#0b1330}
+    .stage{min-height:560px; display:grid; grid-template-rows: auto auto 1fr auto; gap:14px; padding:16px}
+    .statusbar{ display:grid; grid-template-columns: 1fr auto auto auto; gap:8px; align-items:center; font-size:13px; color:#c9d2ff;}
+    .statusbar .badge{ padding:6px 10px; border:1px solid #2b3561; border-radius:10px; background:#0e1331; color:#cfe4ff;}
+    .stimulus-area{ display:grid; grid-template-columns: repeat(3, 120px); grid-template-rows: repeat(3, 120px); gap:12px; justify-content:center; align-content:center; padding:8px 0;}
+    .cell{ border-radius:12px; background:#0e1331; border:1px solid #2b3561; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden}
+    .cell .dot{ width:46px; height:46px; border-radius:50%; background: radial-gradient(circle at 30% 30%, #b7c8ff, #6f86ff); box-shadow: 0 10px 30px rgba(111,134,255,0.45)}
+    .cell.active{ outline:2px solid var(--accent); box-shadow: 0 0 0 6px rgba(94,225,162,0.12) inset, 0 0 30px rgba(94,225,162,0.25)}
+    .relation-bar{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:6px 0 2px}
+    .rel-btn{ padding:10px 12px; border-radius:12px; background:#0f1334; border:1px solid #2b3561; color:#dbe5ff; font-weight:600; font-size:13px; letter-spacing:0.2px; cursor:pointer; transition:.15s ease all;
+      display:inline-flex; align-items:center; gap:8px; user-select:none; position:relative;}
+    .rel-btn .sub{ position:absolute; top:-10px; left:50%; transform:translate(-50%,-100%); background:#0b102b; border:1px solid #2a3560;
+      padding:3px 8px; border-radius:8px; font-size:11px; color:#9fb4ff; opacity:.9;}
+    .rel-btn.kbd::before{ content:attr(data-key); font-weight:700; font-size:11px; background:#0b102b; border:1px solid #2a3560; color:#9fb4ff; padding:3px 6px; border-radius:6px;}
+    .rel-btn:hover{transform:translateY(-1px); border-color:#3a4782}
+    .rel-btn:active{transform:translateY(0)}
+    .rel-btn.matching{ background:linear-gradient(180deg, rgba(94,225,162,0.15), rgba(94,225,162,0.06)); border-color:#3a6c58; color:#dff9ee}
+    .controls{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; padding:8px 0 4px}
+    .btn{padding:10px 14px; border-radius:12px; border:1px solid #2b3561; background:#0e1331; color:#dbe5ff; cursor:pointer; font-weight:700}
+    .btn.primary{background:linear-gradient(180deg, #2a5cff, #1b3cc9); border-color:#2a5cff; box-shadow: 0 8px 20px rgba(42,92,255,0.25)}
+    .btn.ghost{background:#0e1331}
+    .btn.warn{background:linear-gradient(180deg, #ff9a5c, #f0722e); border-color:#ff9a5c}
+    .btn:disabled{opacity:.5; cursor:not-allowed}
+    .log{min-height:62px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background:#0b102a; border:1px dashed #2b3561; border-radius:10px; padding:10px; color:#b6c3ff; font-size:12px; overflow:auto}
+    .legend{font-size:12px; color:#9fb4ff; text-align:center}
+    .bar{height:8px; background:#0b102a; border:1px solid #2b3561; border-radius:999px; overflow:hidden}
+    .bar > .fill{height:100%; width:0%; background:linear-gradient(90deg, var(--accent-2), var(--accent))}
+    .pill{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#0f1433; border:1px solid #2b3561; color:#cfe4ff; font-size:12px}
+    .tiny{font-size:11px; color:#a8b6ff} .sep{opacity:.5; margin:0 6px}
+  </style>
+  <meta name="description" content="Relational N-Back with lure trials and conjunctive prompts." />
+  <meta name="theme-color" content="#0f1220" />
+  <script type="importmap">{"imports":{"seedrandom":"https://cdn.jsdelivr.net/npm/seedrandom@3.0.5/+esm"}}</script>
+</head>
+<body>
+<header>
+  <h1>Relational N-Back — Lures + Conjunctive Mode</h1>
+  <div class="links">
+    <span class="chip">Refs:
+      <a class="chip" href="https://brainscale.net/app/dual-n-back/training" target="_blank" rel="noopener">brainscale.net</a>
+      <a class="chip" href="https://4skinskywalker.github.io/Lite-Dual_N-back/Dichotic_Dual_N-back/" target="_blank" rel="noopener">dichotic</a>
+      <a class="chip" href="https://dev.to/michael_02910bc84e622d090/relational-n-back-4834" target="_blank" rel="noopener">relational variant</a>
+    </span>
+  </div>
+</header>
+
+<div class="container">
+  <section class="card">
+    <h2>Session Setup</h2>
+    <div class="content grid">
+      <div class="grid cols-2">
+        <div><label for="nLevel">N-back level</label><input id="nLevel" type="number" min="1" max="9" value="1" /></div>
+        <div><label for="stimMs">Stimulus time (ms)</label><input id="stimMs" type="number" min="300" step="50" value="1300" /></div>
+        <div><label for="isiMs">ISI / Gap (ms)</label><input id="isiMs" type="number" min="0" step="50" value="300" /></div>
+        <div><label for="len">Sequence length</label><input id="len" type="number" min="10" max="300" value="30" /></div>
+      </div>
+
+      <div class="grid cols-2">
+        <div>
+          <label for="relations">Active modalities (comma-sep)</label>
+          <input id="relations" type="text" value="position, sound, color, shape" />
+          <div class="hint">Supported: position, sound, color, shape</div>
+        </div>
+        <div>
+          <label for="matchRatio">Prompt-true ratio (%)</label>
+          <input id="matchRatio" type="number" min="10" max="90" value="33" />
+        </div>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="row">
+          <label class="switch" title="Dynamic relation chips on buttons">
+            <input id="dynamicLabels" type="checkbox" checked /><span class="toggle"></span>Dynamic prompts
+          </label>
+        </div>
+        <div class="row">
+          <label class="switch" title="Only accept responses during stimulus">
+            <input id="strictWindow" type="checkbox" /><span class="toggle"></span>Strict response window
+          </label>
+        </div>
+      </div>
+
+      <!-- PATCH-LURE controls -->
+      <div class="grid cols-2">
+        <div>
+          <label for="lurePct">Lure trials per modality (%)</label>
+          <input id="lurePct" type="number" min="0" max="70" value="40" />
+          <div class="hint">Near-miss temptations (false but close)</div>
+        </div>
+        <div>
+          <label class="switch" title="Enable/disable designed lure trials">
+            <input id="lureOn" type="checkbox" checked /><span class="toggle"></span>Lures on
+          </label>
+        </div>
+      </div>
+
+      <!-- PATCH-CONJ controls -->
+      <div class="grid cols-2">
+        <div class="row">
+          <label class="switch" title="Add a conjunction button (A ∧ B)">
+            <input id="conjOn" type="checkbox" /><span class="toggle"></span>Conjunctive mode
+          </label>
+        </div>
+        <div>
+          <label for="conjRatio">Conj-true ratio (%)</label>
+          <input id="conjRatio" type="number" min="5" max="50" value="15" />
+        </div>
+      </div>
+      <div>
+        <label for="conjPairs">Conj pairs (comma-sep, use +):</label>
+        <input id="conjPairs" type="text" value="position+color, sound+shape" />
+        <div class="hint">Examples: position+color, sound+shape (must be two valid modalities)</div>
+      </div>
+
+      <div class="row"><span class="pill">Keys: 1..9 = modality buttons, C = Conj button, N = No match, Space = Start/Stop</span></div>
+
+      <div class="controls">
+        <button id="startBtn" class="btn primary">Start</button>
+        <button id="stopBtn" class="btn ghost" disabled>Stop</button>
+        <button id="undoBtn" class="btn ghost" disabled>Undo</button>
+        <button id="stepBtn" class="btn ghost" title="Advance one stimulus without timer;">Step</button>
+        <button id="seedBtn" class="btn ghost" title="Regenerate sequence with new seed">Reseed</button>
+      </div>
+
+      <div class="grid">
+        <div class="row"><div class="hint">Progress</div><div class="hint" id="progressText">0 / 30</div></div>
+        <div class="bar"><div id="progressBar" class="fill"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card stage">
+    <div class="statusbar">
+      <div class="badge">N=<span id="nLabel">1</span></div>
+      <div class="badge">Score <span id="score">0</span></div>
+      <div class="badge">Acc <span id="acc">100%</span></div>
+      <div class="badge">Streak <span id="streak">0</span></div>
+    </div>
+
+    <div id="sdtPanel" class="legend" style="margin-top:-6px">d′ Position: — | Sound: — | Color: — | Shape: —</div>
+
+    <div class="legend">
+      Press a modality button only if its chip prompt is TRUE relative to N-back. Lures add near-miss temptations. Conj button requires both relations to be true.
+    </div>
+
+    <div id="stimArea" class="stimulus-area" aria-live="polite" aria-atomic="true"></div>
+    <div class="relation-bar" id="relationBar"></div>
+
+    <div class="controls">
+      <button id="passBtn" class="btn">No match</button>
+      <button id="hintBtn" class="btn">Peek</button>
+      <button id="repeatBtn" class="btn">Repeat Stimulus</button>
+      <button id="clearBtn" class="btn warn">Clear Prompts</button>
+    </div>
+
+    <div id="log" class="log"></div>
+    <div class="tiny" style="text-align:center; padding-bottom:8px">
+      Position index map: 1..3 top row left→right, 4..6 middle, 7..9 bottom.
+      Relations — Position: Equal/Bigger/Smaller • Sound: Before/Same/After • Color: Same/Opposite • ShapeScale: Smaller/Same/Bigger
+    </div>
+  </section>
+</div>
+
+<footer class="tiny" style="opacity:.85; padding:10px; color:#95a5d6">
+  Sources credited in header; this build adds designed lures and conjunction testing for stronger interference control and relational integration.
+</footer>
+
+<script type="module">
+import seedrandom from "seedrandom";
+let rng = seedrandom(String(Date.now()));
+const reseed = (seed)=> rng = seedrandom(String(seed ?? Date.now()));
+const R = (n)=>Math.floor(rng()*n);
+const pick = (arr)=>arr[R(arr.length)];
+const $ = (s, r=document)=> r.querySelector(s);
+const $$ = (s, r=document)=> Array.from(r.querySelectorAll(s));
+const logEl = $("#log");
+const log = (m)=>{ const t=new Date().toLocaleTimeString(); logEl.textContent = `[${t}] ${m}\n`+logEl.textContent; };
+
+const audio = new (window.AudioContext||window.webkitAudioContext)();
+function tone(freq=440,dur=0.12,type="sine",gain=0.06){
+  const t0=audio.currentTime+0.01, t1=t0+dur;
+  const o=audio.createOscillator(), g=audio.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq,t0);
+  g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(gain,t0+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t1);
+  o.connect(g).connect(audio.destination); o.start(t0); o.stop(t1+0.02);
+}
+const sfx={ ok:()=>{tone(660,0.08,"triangle",0.04);tone(990,0.08,"triangle",0.03)}, err:()=>tone(180,0.12,"sawtooth",0.05), tick:()=>tone(420,0.04,"square",0.03), cue:()=>tone(520,0.06,"sine",0.03) };
+
+// Stimulus sets
+const GRID_POS=[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]];
+const posIndex=(xy)=> xy[1]*3+xy[0]+1;
+const neighbors=(xy)=>{ const [x,y]=xy; return GRID_POS.filter(([a,b])=> Math.abs(a-x)+Math.abs(b-y)===1 ); };
+const LETTERS=["A","B","C","D","E"];
+const COLORS=["#77b5ff","#5ee1a2","#ffb454","#ff6b6b","#c289ff"];
+const COLOR_NAMES=["blue","green","orange","red","purple"];
+const COLOR_OPP={blue:"orange", green:"red", orange:"blue", red:"green", purple:"green"};
+const nameOfColor=(hex)=>{ const i=COLORS.indexOf(hex); return COLOR_NAMES[i>=0?i:0]; };
+const hexOfName=(name)=>{ const i=COLOR_NAMES.indexOf(name); return COLORS[i>=0?i:0]; };
+const SHAPES=["circle","square","triangle"];
+const SCALES=[1,2,3];
+
+const PROMPTS={
+  position:["Equal","Bigger","Smaller"],
+  sound:["Before","Same","After"],
+  color:["Same","Opposite"],
+  shape:["Smaller","Same","Bigger"]
+};
+
+const Eval={
+  position:(prompt,cur,prev)=>{
+    if(!prev) return false; const a=posIndex(cur), b=posIndex(prev);
+    if(prompt==="Equal") return a===b;
+    if(prompt==="Bigger") return a>b;
+    if(prompt==="Smaller") return a<b;
+    return false;
+  },
+  sound:(prompt,cur,prev)=>{
+    if(!prev) return false; const a=LETTERS.indexOf(cur), b=LETTERS.indexOf(prev);
+    if(prompt==="Same") return a===b;
+    if(prompt==="Before") return a<b;
+    if(prompt==="After") return a>b;
+    return false;
+  },
+  color:(prompt,cur,prev)=>{
+    if(!prev) return false; const an=nameOfColor(cur), bn=nameOfColor(prev);
+    if(prompt==="Same") return an===bn;
+    if(prompt==="Opposite") return COLOR_OPP[an]===bn;
+    return false;
+  },
+  shape:(prompt,cur,prev)=>{
+    if(!prev) return false; const a=cur.scale, b=prev.scale;
+    if(prompt==="Same") return a===b;
+    if(prompt==="Smaller") return a<b;
+    if(prompt==="Bigger") return a>b;
+    return false;
+  }
+};
+
+function generateItem(){
+  return {
+    position: pick(GRID_POS),
+    sound: pick(LETTERS),
+    color: pick(COLORS),
+    shape: {type: pick(SHAPES), scale: pick(SCALES)}
+  };
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
+function generateSequence(len){ return Array.from({length:len}, generateItem); }
+
+// UI grid
+const stimArea=$("#stimArea"); const cells=[];
+for(let y=0;y<3;y++){ for(let x=0;x<3;x++){ const d=document.createElement("div"); d.className="cell"; d.dataset.x=x; d.dataset.y=y; cells.push(d); stimArea.appendChild(d);} }
+function clearCells(){ cells.forEach(c=>{ c.classList.remove("active"); c.innerHTML="";}); }
+function drawStimulus(item){
+  clearCells();
+  const [px,py]=item.position;
+  const cell=cells.find(c=> Number(c.dataset.x)===px && Number(c.dataset.y)===py);
+  if(!cell) return; cell.classList.add("active");
+  const scale=item.shape.scale, sz=26+scale*14;
+  if(item.shape.type==="circle"){
+    const d=document.createElement("div"); d.className="dot"; d.style.width=d.style.height=sz+"px";
+    d.style.background=`radial-gradient(circle at 30% 30%, #ffffff, ${item.color})`; d.style.boxShadow="0 10px 30px rgba(0,0,0,0.35)"; cell.appendChild(d);
+  } else if(item.shape.type==="square"){
+    const d=document.createElement("div"); d.style.width=sz+"px"; d.style.height=sz+"px"; d.style.background=item.color; d.style.borderRadius="10px"; d.style.boxShadow="0 10px 30px rgba(0,0,0,0.35)"; cell.appendChild(d);
+  } else {
+    const d=document.createElement("div"); const half=Math.round(sz*0.55);
+    d.style.width="0"; d.style.height="0"; d.style.borderLeft=half+"px solid transparent"; d.style.borderRight=half+"px solid transparent"; d.style.borderBottom=(half*2)+"px solid "+item.color; d.style.transform="translateY(6px)"; cell.appendChild(d);
+  }
+}
+
+const relationBar=$("#relationBar");
+
+// State
+const state={
+  running:false, seq:[], prompts:{}, conjPrompts:[], i:-1,
+  n:1, len:30, relations:["position","sound","color","shape"], matchRatio:33, strictWindow:false, windowOpen:false,
+  responses:[], score:0, streak:0,
+  autoStaircase:true, nextN:null,
+  metrics:{}, // per-rel SDT bins
+  // Lures
+  lureOn:true, lurePct:40,
+  // Conjunction
+  conjOn:false, conjRatio:15, conjPairs:[["position","color"],["sound","shape"]]
+};
+
+// Controls
+const nLevel=$("#nLevel"), stimMs=$("#stimMs"), isiMs=$("#isiMs"), len=$("#len");
+const relationsInput=$("#relations"), matchRatio=$("#matchRatio"), dynamicLabels=$("#dynamicLabels");
+const strictWindow=$("#strictWindow"), lureOn=$("#lureOn"), lurePct=$("#lurePct");
+const conjOn=$("#conjOn"), conjRatio=$("#conjRatio"), conjPairsEl=$("#conjPairs");
+const progressBar=$("#progressBar"), progressText=$("#progressText"), nLabel=$("#nLabel");
+const scoreEl=$("#score"), accEl=$("#acc"), streakEl=$("#streak");
+const startBtn=$("#startBtn"), stopBtn=$("#stopBtn"), undoBtn=$("#undoBtn"), stepBtn=$("#stepBtn"), seedBtn=$("#seedBtn");
+const passBtn=$("#passBtn"), hintBtn=$("#hintBtn"), repeatBtn=$("#repeatBtn"), clearBtn=$("#clearBtn");
+
+// Metrics & SDT
+function resetMetrics(){
+  state.metrics={};
+  const keys=[...state.relations]; if(state.conjOn) keys.push("conj");
+  keys.forEach(k=> state.metrics[k]={H:0,M:0,FA:0,CR:0});
+  updateSDTPanel();
+}
+function erfInv(x){ const a=0.147, ln=Math.log(1-x*x), s=(2/(Math.PI*a))+ln/2; return Math.sign(x)*Math.sqrt(Math.sqrt(s*s - ln/a) - s); }
+function z(p){ const eps=1/(2*1000); const x=Math.min(1-eps, Math.max(eps, p)); return Math.sqrt(2)*erfInv(2*x-1); }
+function computeDP(){
+  const out={}; Object.entries(state.metrics).forEach(([rel,m])=>{
+    const P_hit = m.H/Math.max(1,(m.H+m.M));
+    const P_fa  = m.FA/Math.max(1,(m.FA+m.CR));
+    out[rel]={ dPrime: (z(P_hit)-z(P_fa)), bias: (-0.5*(z(P_hit)+z(P_fa))) };
+  }); return out;
+}
+function updateSDTPanel(){
+  const sdt=computeDP();
+  const list = Object.keys(state.metrics).map(rel=> `${rel[0].toUpperCase()+rel.slice(1)} ${(isFinite(sdt[rel]?.dPrime)? sdt[rel].dPrime.toFixed(2):"—")}`);
+  $("#sdtPanel").textContent = `d′ ${list.join(" | ")}`;
+}
+
+// Config
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function parseRelationsField(){
+  const raw=relationsInput.value.split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const supported=["position","sound","color","shape"];
+  const rels=raw.filter(r=> supported.includes(r));
+  return rels.length? rels: ["position"];
+}
+function parsePairsField(){
+  const pairs = conjPairsEl.value.split(",").map(s=>s.trim()).filter(Boolean).map(p=> p.split("+").map(x=>x.trim().toLowerCase()));
+  const valid = pairs.filter(([a,b])=> a&&b && a!==b && state.relations.includes(a) && state.relations.includes(b));
+  return valid.length? valid : [["position","color"]];
+}
+function refreshConfig(){
+  state.n = clamp(parseInt(nLevel.value)||1,1,9);
+  state.len = clamp(parseInt(len.value)||30, 8, 500);
+  state.matchRatio = clamp(parseInt(matchRatio.value)||33, 0, 90);
+  state.relations = parseRelationsField();
+  state.strictWindow = strictWindow.checked;
+  state.lureOn = lureOn.checked; state.lurePct = clamp(parseInt(lurePct.value)||0,0,70);
+  state.conjOn = conjOn.checked; state.conjRatio = clamp(parseInt(conjRatio.value)||15, 0, 50);
+  state.conjPairs = parsePairsField();
+  nLabel.textContent=state.n;
+}
+
+// Buttons
+function buildRelationButtons(){
+  relationBar.innerHTML="";
+  const keys=[];
+  state.relations.forEach((rel,idx)=>{
+    const btn=document.createElement("button");
+    btn.className="rel-btn kbd"; btn.dataset.rel=rel; btn.setAttribute("data-key", String((idx+1)%10||0));
+    btn.innerHTML=`<span class="title">${rel.charAt(0).toUpperCase()+rel.slice(1)}</span>`;
+    const sub=document.createElement("span"); sub.className="sub"; sub.textContent="..."; btn.appendChild(sub);
+    btn.addEventListener("click", ()=> tryRespond(rel));
+    relationBar.appendChild(btn); keys.push(String((idx+1)%10||0));
+  });
+  if(state.conjOn){
+    const btn=document.createElement("button");
+    btn.className="rel-btn kbd"; btn.dataset.rel="conj"; btn.setAttribute("data-key","C");
+    btn.innerHTML=`<span class="title">Conj</span>`; const sub=document.createElement("span"); sub.className="sub"; sub.textContent="A ∧ B"; btn.appendChild(sub);
+    btn.addEventListener("click", ()=> tryRespond("conj"));
+    relationBar.appendChild(btn);
+  }
+}
+
+// Prompt generation (true, lures, and conj) — conflict-free per index
+function generatePromptsAndAdjust(seq){
+  const n=state.n, L=seq.length, rels=[...state.relations];
+  const prompts={}; rels.forEach(r=> prompts[r]=Array.from({length:L}, ()=> pick(PROMPTS[r])));
+  const usableIdx = Array.from({length:L-n}, (_,k)=>k+n); shuffle(usableIdx);
+
+  // TRUE assignments split across rels
+  const desiredTrueTotal = Math.floor((L-n)*(state.matchRatio/100));
+  const basePerRel = Math.floor(desiredTrueTotal/Math.max(1,rels.length));
+  let leftover = desiredTrueTotal - basePerRel*rels.length;
+  const used=new Set();
+
+  const assignTrueFor=(rel, count)=>{
+    let c=0; for(const i of usableIdx){ if(used.has(i)) continue; used.add(i); adjustToTrue(rel, prompts[rel][i], seq, i, n); c++; if(c>=count) break; }
+  };
+  rels.forEach(rel=> assignTrueFor(rel, basePerRel + (leftover>0? (leftover--,1):0)));
+
+  // LURES per modality on remaining slots (PATCH-LURE)
+  if(state.lureOn && state.lurePct>0){
+    const desiredLureTotal = Math.floor((L-n)*(state.lurePct/100));
+    const baseLurePerRel = Math.floor(desiredLureTotal/Math.max(1,rels.length));
+    let leftoverL = desiredLureTotal - baseLurePerRel*rels.length;
+    const assignLureFor=(rel,count)=>{
+      let c=0;
+      for(const i of usableIdx){
+        if(used.has(i)) continue;
+        used.add(i);
+        applyLure(rel, prompts[rel][i], seq, i, n);
+        c++; if(c>=count) break;
+      }
+    };
+    rels.forEach(rel=> assignLureFor(rel, baseLurePerRel + (leftoverL>0? (leftoverL--,1):0)));
+  }
+
+  // Conjunctive TRUE assignments on remaining slots (PATCH-CONJ)
+  const conj = Array.from({length:L}, ()=> null);
+  if(state.conjOn && state.conjRatio>0){
+    const desiredConjTrue = Math.floor((L-n)*(state.conjRatio/100));
+    let ci=0, pairIdx=0;
+    for(const i of usableIdx){
+      if(used.has(i)) continue;
+      const [a,b]= state.conjPairs[pairIdx % state.conjPairs.length]; pairIdx++;
+      const pa = pick(PROMPTS[a]); const pb = pick(PROMPTS[b]);
+      // write conj prompt
+      conj[i]={ pair:[a,b], prompts: {[a]:pa, [b]:pb} };
+      // adjust both modalities to be true
+      adjustToTrue(a, pa, seq, i, n);
+      adjustToTrue(b, pb, seq, i, n);
+      used.add(i); ci++; if(ci>=desiredConjTrue) break;
+    }
+  }
+
+  return {prompts, conj};
+}
+
+function adjustToTrue(rel, p, seq, i, n){
+  const back=seq[i-n], cur=seq[i]; if(!back) return;
+  if(rel==="position"){
+    const b=posIndex(back.position);
+    let cands=GRID_POS.slice();
+    if(p==="Equal") cands=[back.position];
+    if(p==="Bigger") cands=GRID_POS.filter(xy=> posIndex(xy)>b);
+    if(p==="Smaller") cands=GRID_POS.filter(xy=> posIndex(xy)<b);
+    if(cands.length) cur.position=pick(cands);
+  } else if(rel==="sound"){
+    const b=LETTERS.indexOf(back.sound);
+    if(p==="Same") cur.sound=back.sound;
+    else if(p==="Before"){ const cands=LETTERS.slice(0,b); if(cands.length) cur.sound=pick(cands); }
+    else if(p==="After"){ const cands=LETTERS.slice(b+1); if(cands.length) cur.sound=pick(cands); }
+  } else if(rel==="color"){
+    const backName=nameOfColor(back.color);
+    if(p==="Same") cur.color=back.color;
+    else if(p==="Opposite"){ const opp=COLOR_OPP[backName]; if(opp) cur.color=hexOfName(opp); }
+  } else if(rel==="shape"){
+    const b=back.shape.scale;
+    if(p==="Same") cur.shape.scale=b;
+    if(p==="Smaller"){ const c=SCALES.filter(s=> s<b); if(c.length) cur.shape.scale=pick(c); }
+    if(p==="Bigger"){ const c=SCALES.filter(s=> s>b); if(c.length) cur.shape.scale=pick(c); }
+  }
+}
+
+// PATCH-LURE: craft near-miss (false) adjustments
+function applyLure(rel, p, seq, i, n){
+  const back=seq[i-n], cur=seq[i]; if(!back) return;
+  if(rel==="position"){
+    // If prompt Equal → set adjacent (near) but not equal; Bigger/Smaller → set Equal (temptation)
+    if(p==="Equal"){
+      const adj = neighbors(back.position).filter(xy=> posIndex(xy)!==posIndex(back.position));
+      if(adj.length) cur.position=pick(adj);
+      else { // fallback: not equal
+        const c=GRID_POS.filter(xy=> posIndex(xy)!==posIndex(back.position));
+        cur.position=pick(c);
+      }
+    } else if(p==="Bigger"||p==="Smaller"){
+      cur.position=back.position; // equality tempts comparative
+    }
+  } else if(rel==="sound"){
+    const b=LETTERS.indexOf(back.sound);
+    if(p==="Same"){
+      const cands=[]; if(b>0) cands.push(LETTERS[b-1]); if(b<LETTERS.length-1) cands.push(LETTERS[b+1]);
+      cur.sound = cands.length? pick(cands): pick(LETTERS.filter(L=>L!==back.sound));
+    } else if(p==="Before" || p==="After"){
+      cur.sound=back.sound; // equality lure
+    }
+  } else if(rel==="color"){
+    const backName=nameOfColor(back.color);
+    if(p==="Same"){
+      // pick any color not equal & not opposite
+      const cands=COLOR_NAMES.filter(nm=> nm!==backName && COLOR_OPP[backName]!==nm).map(hexOfName);
+      cur.color = cands.length? pick(cands): back.color;
+    } else if(p==="Opposite"){
+      cur.color = back.color; // equality lure
+    }
+  } else if(rel==="shape"){
+    const b=back.shape.scale;
+    if(p==="Same"){
+      const cands=SCALES.filter(s=> Math.abs(s-b)===1);
+      cur.shape.scale = cands.length? pick(cands): b;
+    } else if(p==="Smaller"||p==="Bigger"){
+      cur.shape.scale = b; // equality lure
+    }
+  }
+}
+
+// Build prompts and sequence
+function newSequence(){
+  refreshConfig();
+  state.seq = generateSequence(state.len);
+  const {prompts, conj} = generatePromptsAndAdjust(state.seq);
+  state.prompts = prompts;
+  state.conjPrompts = conj;
+  state.i=-1; state.responses=[]; state.score=0; state.streak=0;
+  scoreEl.textContent="0"; streakEl.textContent="0"; accEl.textContent="100%";
+  progress(0); buildRelationButtons(); updateRelationButtons(); clearCells(); resetMetrics();
+  log(`Sequence len=${state.len} N=${state.n} rels=${state.relations.join("+")} true≈${state.matchRatio}% lures=${state.lureOn?state.lurePct:0}% conj=${state.conjOn?state.conjRatio:0}%`);
+}
+
+// Run loop & eval
+function progress(idx){ $("#progressText").textContent = `${idx} / ${state.len}`; progressBar.style.width = `${Math.round(idx/state.len*100)}%`; }
+function openWindow(){ state.windowOpen=true; if($("#soundOn").checked) sfx.tick(); updateRelationButtons(); }
+function closeWindow(){ state.windowOpen=false; updateRelationButtons(); }
+function present(i, withAudio=true){
+  drawStimulus(state.seq[i]);
+  if(withAudio && $("#soundOn").checked){
+    const letter=state.seq[i].sound; const map={A:440,B:494,C:523,D:587,E:659}; tone(map[letter]||392,0.09,"sine",0.04);
+  }
+}
+
+function conjTruthAt(i){
+  if(!state.conjOn) return false;
+  const spec = state.conjPrompts[i]; if(!spec) return false;
+  const [a,b]=spec.pair; const pa=spec.prompts[a], pb=spec.prompts[b];
+  return relationIsTrue(a,i,pa) && relationIsTrue(b,i,pb);
+}
+function relationIsTrue(rel, i, forcedPrompt=null){
+  const n=state.n; if(i<n) return false;
+  if(rel==="conj") return conjTruthAt(i);
+  const prompt = forcedPrompt ?? state.prompts[rel]?.[i];
+  if(!prompt) return false;
+  if(rel==="position") return Eval.position(prompt, state.seq[i].position, state.seq[i-n].position);
+  if(rel==="sound")    return Eval.sound(prompt, state.seq[i].sound, state.seq[i-n].sound);
+  if(rel==="color")    return Eval.color(prompt, state.seq[i].color, state.seq[i-n].color);
+  if(rel==="shape")    return Eval.shape(prompt, state.seq[i].shape, state.seq[i-n].shape);
+  return false;
+}
+
+function updateRelationButtons(){
+  const i=state.i;
+  state.relations.forEach((rel, idx)=>{
+    const btn=relationBar.querySelector(`.rel-btn[data-rel="${rel}"]`); if(!btn) return;
+    btn.querySelector(".title").textContent = rel.charAt(0).toUpperCase()+rel.slice(1);
+    const sub=btn.querySelector(".sub");
+    if(dynamicLabels.checked){ const p=state.prompts[rel]?.[i] ?? pick(PROMPTS[rel]); sub.textContent=p; sub.style.display="inline-block"; }
+    else { sub.textContent=""; sub.style.display="none"; }
+    btn.classList.remove("matching");
+    if(relationIsTrue(rel,i)) btn.classList.add("matching");
+    btn.setAttribute("data-key", String((idx+1)%10||0));
+  });
+  if(state.conjOn){
+    const btn=relationBar.querySelector(`.rel-btn[data-rel="conj"]`);
+    if(btn){
+      const spec=state.conjPrompts[i];
+      const sub=btn.querySelector(".sub");
+      if(spec){ const [a,b]=spec.pair; const pa=spec.prompts[a], pb=spec.prompts[b];
+        sub.textContent = `${shortRel(a,pa)} ∧ ${shortRel(b,pb)}`; sub.style.display="inline-block";
+      } else { sub.textContent="—"; sub.style.display="inline-block"; }
+      btn.classList.toggle("matching", conjTruthAt(i));
+    }
+  }
+}
+function shortRel(mod,p){ // concise chip
+  const map={Equal:"=", Bigger:"▴", Smaller:"▾", Same:"=", Opposite:"≠", Before:"<", After:">"};
+  return (mod[0].toUpperCase()+":")+ (map[p]??p);
+}
+
+function calcAccuracy(){
+  const judged=state.responses.filter(r=> r.kind!=="pre");
+  if(!judged.length) return 100;
+  const hits=judged.filter(r=>r.hit).length; return Math.round((hits/judged.length)*100);
+}
+
+function tryRespond(rel){
+  if(state.strictWindow && !state.windowOpen){ if($("#soundOn").checked) sfx.err(); return; }
+  if(!state.running && state.i<0){ log("Start the session to respond."); return; }
+  const i=state.i; const hit = relationIsTrue(rel, i);
+  state.responses.push({i, rel, hit, ts: performance.now(), kind:"rel"});
+  if(hit){ state.score+=1; state.streak+=1; if($("#soundOn").checked) sfx.ok(); } else { state.streak=0; if($("#soundOn").checked) sfx.err(); }
+  scoreEl.textContent=String(state.score); streakEl.textContent=String(state.streak); accEl.textContent=`${calcAccuracy()}%`;
+  const btn=relationBar.querySelector(`.rel-btn[data-rel="${rel}"]`); if(btn){ if(hit) btn.classList.add("matching"); btn.animate([{transform:"scale(1)"},{transform:"scale(0.96)"},{transform:"scale(1)"}], {duration:120});}
+  log(`${hit? "HIT":"MISS"} on ${rel} @ t=${i}`);
+}
+function respondNoMatch(){
+  const i=state.i;
+  const anyTrue = [...state.relations].some(rel=> relationIsTrue(rel,i)) || (state.conjOn && conjTruthAt(i));
+  const hit = !anyTrue;
+  state.responses.push({i, rel:"none", hit, ts: performance.now(), kind:"none"});
+  if(hit){ state.score+=1; state.streak+=1; if($("#soundOn").checked) sfx.ok(); } else { state.streak=0; if($("#soundOn").checked) sfx.err(); }
+  scoreEl.textContent=String(state.score); streakEl.textContent=String(state.streak); accEl.textContent=`${calcAccuracy()}%`;
+  log(`${hit? "Correct":"Incorrect"} "No match" @ t=${i}`);
+}
+
+// Tally SDT after each trial
+function truthsAt(i){
+  const map={}; state.relations.forEach(rel=> map[rel]=relationIsTrue(rel,i));
+  if(state.conjOn) map["conj"]=conjTruthAt(i);
+  return map;
+}
+function finalizeTrial(i){
+  const truth=truthsAt(i);
+  const presses={}; state.responses.filter(r=> r.i===i && r.kind==="rel").forEach(r=> presses[r.rel]=true);
+  Object.keys(truth).forEach(rel=>{
+    const t=truth[rel]; const p=!!presses[rel];
+    const m=state.metrics[rel] || (state.metrics[rel]={H:0,M:0,FA:0,CR:0});
+    if(t && p) m.H++; else if(t && !p) m.M++; else if(!t && p) m.FA++; else m.CR++;
+  });
+  updateSDTPanel();
+}
+
+// Staircase (keep from previous build)
+const STAIR_WIN=40, STAIR_UP=0.90, STAIR_DOWN=0.80;
+function recentAccuracy(windowSize=STAIR_WIN){
+  const judged=state.responses.filter(r=> r.kind!=="pre");
+  if(!judged.length) return null;
+  const last=judged.slice(-windowSize); const hits=last.filter(r=>r.hit).length;
+  return hits/last.length;
+}
+
+// Loop
+let stepTimeout=null;
+function runLoop(){
+  if(!state.running) return;
+  state.i+=1; const i=state.i;
+  if(i>=state.seq.length){ finish(); return; }
+  progress(i); present(i); openWindow();
+
+  const stimDuration=clamp(parseInt(stimMs.value)||1300, 200, 4000);
+  const gapDuration=clamp(parseInt(isiMs.value)||300, 0, 4000);
+
+  clearTimeout(stepTimeout);
+  stepTimeout=setTimeout(()=>{
+    closeWindow(); finalizeTrial(i);
+    if(gapDuration>0){ stepTimeout=setTimeout(()=> runLoop(), gapDuration); } else { runLoop(); }
+  }, stimDuration);
+  updateRelationButtons();
+}
+
+function finish(){
+  state.running=false; startBtn.disabled=false; stopBtn.disabled=true; undoBtn.disabled=false; stepBtn.disabled=false; passBtn.disabled=true;
+  const ra=recentAccuracy(); let proposed=state.n;
+  if(ra!==null){ if(ra>=STAIR_UP) proposed=Math.min(9,state.n+1); else if(ra<STAIR_DOWN) proposed=Math.max(1,state.n-1); }
+  state.nextN = (proposed!==state.n)? proposed:null;
+  if(state.nextN!=null) log(`Staircase: planning N→${state.nextN} next run (recent acc=${(ra*100|0)}%)`);
+  log(`Finished. Score=${state.score} Acc=${calcAccuracy()}%`);
+}
+function start(){
+  if(state.running) return; audio.resume?.();
+  if(state.nextN!=null){ nLevel.value=String(state.nextN); state.nextN=null; }
+  refreshConfig();
+  if(state.seq.length!==state.len) newSequence();
+  state.running=true; startBtn.disabled=true; stopBtn.disabled=false; undoBtn.disabled=true; stepBtn.disabled=true; passBtn.disabled=false;
+  runLoop(); log("Started.");
+}
+function stop(){
+  state.running=false; clearTimeout(stepTimeout); closeWindow();
+  startBtn.disabled=false; stopBtn.disabled=true; undoBtn.disabled=false; stepBtn.disabled=false; passBtn.disabled=true; log("Stopped.");
+}
+function stepOnce(){
+  if(state.running) return;
+  state.i+=1; if(state.i>=state.seq.length){ log("Reached end. Reseed or restart."); state.i=state.seq.length-1; return; }
+  progress(state.i); present(state.i); openWindow();
+  clearTimeout(stepTimeout); stepTimeout=setTimeout(()=>{ closeWindow(); finalizeTrial(state.i); }, 900);
+  sfx.cue(); updateRelationButtons();
+}
+function undo(){
+  const last=state.responses.pop(); if(!last){ log("Nothing to undo."); return; }
+  recomputeScore(); log(`Undid response @ t=${last.i} (${last.rel})`);
+}
+function recomputeScore(){
+  state.score=0; state.streak=0;
+  state.responses.forEach(r=>{ if(r.hit){ state.score+=1; state.streak+=1; } else { state.streak=0; }});
+  scoreEl.textContent=String(state.score); streakEl.textContent=String(state.streak); accEl.textContent=`${calcAccuracy()}%`;
+}
+function peek(){
+  const i=state.i, n=state.n; if(i<n){ log("Peek: Not enough history yet."); return; }
+  const truths = [...state.relations].filter(rel=> relationIsTrue(rel,i)).map(rel=> `${rel}:${state.prompts[rel][i]}`);
+  if(state.conjOn && conjTruthAt(i)){ const spec=state.conjPrompts[i]; truths.push(`conj:${spec? `${spec.pair[0]}∧${spec.pair[1]}`:"?"}`); }
+  log(`Peek @ t=${i}: ${truths.length? truths.join(" | "): "no prompts true"}`);
+}
+function repeatStim(){ if(state.i<0) return; present(state.i); openWindow(); updateRelationButtons(); }
+function clearPrompts(){ dynamicLabels.checked=false; updateRelationButtons(); log("Dynamic prompts disabled."); }
+
+// Keyboard
+document.addEventListener("keydown", (e)=>{
+  if(e.target && ["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)) return;
+  if(e.code==="Space"){ e.preventDefault(); if(state.running) stop(); else start(); return; }
+  if(e.key.toLowerCase()==="n"){ e.preventDefault(); respondNoMatch(); return; }
+  if(e.key.toLowerCase()==="c" && state.conjOn){ e.preventDefault(); tryRespond("conj"); return; }
+  const btn = relationBar.querySelector(`.rel-btn[data-key="${e.key}"]`); if(btn){ e.preventDefault(); tryRespond(btn.dataset.rel); }
+});
+
+// Wire controls
+$("#soundOn")?.addEventListener("change", ()=>{ if($("#soundOn").checked) sfx.cue(); });
+[ strictWindow, dynamicLabels, lureOn, conjOn ].forEach(el=> el.addEventListener("change", ()=>{ if(state.running) return; newSequence(); }));
+[ nLevel, stimMs, isiMs, len, relationsInput, matchRatio, lurePct, conjRatio, conjPairsEl ].forEach(el=>{
+  el.addEventListener("change", ()=>{ if(state.running) return; newSequence(); });
+});
+
+startBtn.onclick=start; stopBtn.onclick=stop; stepBtn.onclick=stepOnce; undoBtn.onclick=undo;
+seedBtn.onclick=()=>{ reseed(); newSequence(); };
+passBtn.onclick=respondNoMatch; hintBtn.onclick=peek; repeatBtn.onclick=repeatStim; clearBtn.onclick=clearPrompts;
+
+// Init
+newSequence();
+window.RNBack={state, newSequence, start, stop, stepOnce, reseed};
+</script>
+</body>
+</html>
