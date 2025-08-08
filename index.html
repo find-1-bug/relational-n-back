@@ -37,7 +37,8 @@
       width:100%; max-width:1100px; padding:0 20px 30px; display:grid; grid-template-columns: 320px 1fr; gap:20px;
     }
     @media (max-width: 960px){
-      .container{grid-template-columns:1fr}
+      .container{grid-template-columns:1fr; padding:0 10px 80px;}
+      .stimulus-area{grid-template-columns: repeat(3, 90px); grid-template-rows: repeat(3, 90px); gap:8px;}
     }
     .card{
       background:linear-gradient(180deg, #151a33, #11162c);
@@ -59,12 +60,12 @@
       border:1px solid #2c375f; border-radius:10px; outline:none;
     }
     input[type="range"]{width:100%}
-    .row{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
     .hint{font-size:12px; color:#b6bdd9}
-    .switch{display:inline-flex; align-items:center; gap:10px; cursor:pointer; user-select:none; font-size:13px; color:#d7defa;}
+    .switch{display:inline-flex; align-items:center; gap:10px; cursor:pointer; user-select:none; font-size:13px; color:#d7defa; min-width:150px;}
     .switch input{display:none}
     .toggle{
-      width:44px; height:24px; background:#0e1230; border:1px solid #2c375f; border-radius:999px; position:relative; transition:.2s ease all;
+      width:44px; height:24px; background:#0e1230; border:1px solid #2c375f; border-radius:999px; position:relative; transition:.2s ease all; flex-shrink:0;
     }
     .toggle::after{
       content:""; width:18px; height:18px; background:#dfe7ff; border-radius:50%;
@@ -139,11 +140,27 @@
     .tiny{font-size:11px; color:#a8b6ff}
     .sep{opacity:.5; margin:0 6px}
     .metrics{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace; font-size:12px; color:#cfe4ff; background:#0b102a; border:1px dashed #2b3561; border-radius:10px; padding:8px;}
+    @media (max-width: 600px) {
+      .manual-controls {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        padding: 10px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        border-top: 1px solid #262c4a;
+        z-index: 10;
+      }
+      .controls .manual-controls button {
+        flex: 1;
+      }
+    }
   </style>
-
   <meta name="description" content="Relational N‑Back trainer with dynamic relation prompts on classic modality buttons. Position SameRow/SameCol/Closer/Farther, Sound Before/Same/After, Color Same/Opposite (true complement), Shape scale Smaller/Same/Bigger." />
   <meta name="theme-color" content="#0f1220" />
-
   <script type="importmap">
   {
     "imports": {
@@ -163,7 +180,6 @@
       </span>
     </div>
   </header>
-
   <div class="container">
     <section class="card">
       <h2>Session Setup</h2>
@@ -183,10 +199,9 @@
           </div>
           <div>
             <label for="len">Sequence length</label>
-            <input id="len" type="number" min="10" max="200" value="24" />
+            <input id="len" type="number" min="10" max="300" value="24" />
           </div>
         </div>
-
         <div class="grid cols-2">
           <div>
             <label for="relations">Active modalities (comma‑sep)</label>
@@ -198,7 +213,6 @@
             <input id="matchRatio" type="number" min="10" max="90" value="33" />
           </div>
         </div>
-
         <div class="grid cols-2">
           <div>
             <label for="lurePct">Lure trials (%)</label>
@@ -212,7 +226,6 @@
             </label>
           </div>
         </div>
-
         <div class="grid cols-2">
           <div class="row">
             <label class="switch" title="Flip button prompt to currently requested relation; press only if true vs N-back.">
@@ -229,7 +242,6 @@
             </label>
           </div>
         </div>
-
         <div class="grid cols-2">
           <div class="row">
             <label class="switch" title="Auto adjust N using a staircase based on per‑modality d′ and FA rate">
@@ -246,19 +258,37 @@
             </label>
           </div>
         </div>
-
+        <div class="grid cols-2">
+          <div class="row">
+            <label class="switch" title="Announce stimuli via voice for accessibility (position, sound, color, shape).">
+              <input id="voiceOn" type="checkbox" />
+              <span class="toggle"></span>
+              Voice cues
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" title="Use grayscale for colors (disable 'color' modality for full effect).">
+              <input id="colorblind" type="checkbox" />
+              <span class="toggle"></span>
+              Colorblind mode
+            </label>
+          </div>
+        </div>
         <div class="row">
           <span class="pill">Keys: 1..9 = modality buttons, N = No match, Space = Start/Stop</span>
         </div>
-
         <div class="controls">
           <button id="startBtn" class="btn primary">Start</button>
           <button id="stopBtn" class="btn ghost" disabled>Stop</button>
           <button id="undoBtn" class="btn ghost" disabled>Undo</button>
-          <button id="stepBtn" class="btn ghost" title="Advance one stimulus without timer; useful for testing.">Step</button>
           <button id="seedBtn" class="btn ghost" title="Regenerate sequence with new seed">Reseed</button>
+          <button id="exportBtn" class="btn ghost">Export Log</button>
+          <button id="resetBtn" class="btn warn">Reset Settings</button>
         </div>
-
+        <div class="controls manual-controls">
+          <button id="backBtn" class="btn ghost" title="Go to previous stimulus in manual mode (review only; no scoring).">Back</button>
+          <button id="stepBtn" class="btn ghost" title="Advance one stimulus without timer; useful for testing.">Step</button>
+        </div>
         <div class="grid">
           <div class="row">
             <div class="hint">Progress</div>
@@ -268,7 +298,6 @@
         </div>
       </div>
     </section>
-
     <section class="card stage">
       <div class="statusbar">
         <div class="badge">N=<span id="nLabel">1</span></div>
@@ -277,53 +306,42 @@
         <div class="badge">Streak <span id="streak">0</span></div>
         <div class="badge">Trials <span id="trialCounter">0</span></div>
       </div>
-
       <div class="legend">
         Relational twist: Each modality’s button shows a prompt. Press it only if TRUE vs N‑back.
         Position relations: Equal / SameRow / SameCol / Closer / Farther.
       </div>
-
       <div id="stimArea" class="stimulus-area" aria-live="polite" aria-atomic="true"></div>
-
       <div class="relation-bar" id="relationBar"></div>
-
       <div class="controls">
         <button id="passBtn" class="btn">No match</button>
         <button id="hintBtn" class="btn">Peek</button>
         <button id="repeatBtn" class="btn">Repeat Stimulus</button>
         <button id="clearBtn" class="btn warn">Clear Prompts</button>
       </div>
-
       <div id="log" class="log"></div>
       <div id="metrics" class="metrics"></div>
-
       <div class="tiny" style="text-align:center; padding-bottom:8px">
         Grid index: 1..3 top row, 4..6 middle, 7..9 bottom. Sound A..E. Color uses true hue complement for “Opposite”.
-        Shape relation is on scale: Smaller / Same / Bigger.
+        Shape relation is on scale: Smaller / Same / Bigger. (Colorblind mode uses grayscale.)
       </div>
     </section>
   </div>
-
   <footer>
-    Inspired by established dual n‑back UX patterns such as brainscale.net and community adaptations like 4skinskywalker’s dichotic version. A relational variant has been discussed in community posts (e.g., dev.to).
+    Inspired by established dual n‑back UX patterns such as brainscale.net and community adaptations like 4skinskywalker’s dichotic version. A relational variant has been discussed in community posts (e.g., dev.to). Improved with accessibility features.
   </footer>
-
   <script type="module">
     import seedrandom from "seedrandom";
-
     // Seeded RNG
     let rng = seedrandom(String(Date.now()));
     const reseed = (seed) => rng = seedrandom(String(seed ?? Date.now()));
     const R = (n)=>Math.floor(rng()*n);
     const pick = (arr)=>arr[R(arr.length)];
-
     // DOM helpers
     const $ = (s, r=document) => r.querySelector(s);
     const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
     const logEl = $("#log");
     const log = (msg)=>{ const t = new Date().toLocaleTimeString(); logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent; };
     const metricsEl = $("#metrics");
-
     // Procedural audio
     const audio = new (window.AudioContext || window.webkitAudioContext)();
     function tone(freq=440, dur=0.12, type="sine", gain=0.06){
@@ -344,7 +362,6 @@
       tick: ()=>{ tone(420, 0.04, "square", 0.03) },
       cue: ()=>{ tone(520, 0.06, "sine", 0.03) }
     };
-
     // Stimulus domains
     const GRID_POS = [
       [0,0],[1,0],[2,0],
@@ -353,11 +370,9 @@
     ];
     const posIndex = (xy)=> xy[1]*3 + xy[0] + 1; // 1..9
     const centerDist = (xy)=> Math.hypot(xy[0]-1, xy[1]-1);
-
     const LETTERS = ["A","B","C","D","E"];
-
-    // Use a base palette; opposite computed by hue complement
-    const COLORS = ["#77b5ff","#5ee1a2","#ffb454","#ff6b6b","#c289ff"];
+    // Color-blind safe palette (deuteranomaly-friendly)
+    const COLORS = ["#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2"];
     // HSL helpers for true complement and near hues (for lures)
     function hexToHsl(hex){
       const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
@@ -395,10 +410,8 @@
       const delta = pick([-20,-15,15,20]);
       return hslToHex({h:(hsl.h+delta+360)%360, s:hsl.s, l:hsl.l});
     };
-
     const SHAPES = ["circle","square","triangle"];
     const SCALES = [1,2,3];
-
     // Relation prompts per modality
     const PROMPTS = {
       position: ["Equal","SameRow","SameCol","Closer","Farther"],
@@ -406,15 +419,14 @@
       color: ["Same","Opposite"],
       shape: ["Smaller","Same","Bigger"] // relation on scale
     };
-
     // Evaluate if the prompt is true
     const Eval = {
       position: (prompt, cur, prev)=>{
         if(!prev) return false;
-        if(prompt==="Equal")   return cur[0]===prev[0] && cur[1]===prev[1];
+        if(prompt==="Equal") return cur[0]===prev[0] && cur[1]===prev[1];
         if(prompt==="SameRow") return cur[1]===prev[1];
         if(prompt==="SameCol") return cur[0]===prev[0];
-        if(prompt==="Closer")  return centerDist(cur) < centerDist(prev);
+        if(prompt==="Closer") return centerDist(cur) < centerDist(prev);
         if(prompt==="Farther") return centerDist(cur) > centerDist(prev);
         return false;
       },
@@ -428,7 +440,7 @@
       },
       color: (prompt, cur, prev)=>{
         if(!prev) return false;
-        if(prompt==="Same")     return cur.toLowerCase() === prev.toLowerCase();
+        if(prompt==="Same") return cur.toLowerCase() === prev.toLowerCase();
         if(prompt==="Opposite") return cur.toLowerCase() === complementHex(prev).toLowerCase();
         return false;
       },
@@ -441,7 +453,6 @@
         return false;
       }
     };
-
     // Generate one multi-attribute stimulus
     function generateItem(){
       return {
@@ -452,27 +463,26 @@
       };
     }
     function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
-
     // Adjust current item to satisfy TRUE/LURE/FOIL relative to back item for the given prompt
     function adjustStimulusForRole(rel, prompt, cur, back, role){
       if(rel==="position"){
         const neighbors = GRID_POS.filter(xy => (xy[0]===back.position[0] || xy[1]===back.position[1]) && !(xy[0]===back.position[0] && xy[1]===back.position[1]));
         const far = GRID_POS.filter(xy => xy[0]!==back.position[0] && xy[1]!==back.position[1]);
         if(role==="TRUE"){
-          if(prompt==="Equal")   cur.position = back.position;
+          if(prompt==="Equal") cur.position = back.position;
           if(prompt==="SameRow") cur.position = pick(GRID_POS.filter(xy => xy[1]===back.position[1] && !(xy[0]===back.position[0] && xy[1]===back.position[1]))) || cur.position;
           if(prompt==="SameCol") cur.position = pick(GRID_POS.filter(xy => xy[0]===back.position[0] && !(xy[0]===back.position[0] && xy[1]===back.position[1]))) || cur.position;
-          if(prompt==="Closer")  cur.position = pick(GRID_POS.filter(xy => centerDist(xy) < centerDist(back.position))) || cur.position;
+          if(prompt==="Closer") cur.position = pick(GRID_POS.filter(xy => centerDist(xy) < centerDist(back.position))) || cur.position;
           if(prompt==="Farther") cur.position = pick(GRID_POS.filter(xy => centerDist(xy) > centerDist(back.position))) || cur.position;
         }else if(role==="LURE"){
           // plausible but false wrt prompt
-          if(prompt==="Equal")   cur.position = pick(neighbors.length? neighbors : far);
+          if(prompt==="Equal") cur.position = pick(neighbors.length? neighbors : far);
           if(prompt==="SameRow") cur.position = pick(GRID_POS.filter(xy => xy[0]===back.position[0])) || cur.position; // same col lure
           if(prompt==="SameCol") cur.position = pick(GRID_POS.filter(xy => xy[1]===back.position[1])) || cur.position; // same row lure
-          if(prompt==="Closer")  cur.position = back.position; // equality lure
+          if(prompt==="Closer") cur.position = back.position; // equality lure
           if(prompt==="Farther") cur.position = back.position; // equality lure
         }else{ // FOIL
-          cur.position = pick(far.length? far : GRID_POS.filter(xy => xy!==back.position));
+          cur.position = pick(far.length? far : GRID_POS.filter(xy => !(xy[0]===back.position[0] && xy[1]===back.position[1])));
         }
       } else if(rel==="sound"){
         const bi = LETTERS.indexOf(back.sound);
@@ -483,18 +493,18 @@
         if(role==="TRUE"){
           if(prompt==="Same") cur.sound = back.sound;
           if(prompt==="Before" && before.length) cur.sound = pick(before);
-          if(prompt==="After"  && after.length)  cur.sound = pick(after);
+          if(prompt==="After" && after.length) cur.sound = pick(after);
         }else if(role==="LURE"){
-          cur.sound = pick(adj.length? adj : (LETTERS.filter(s=>s!==back.sound)));
+          cur.sound = pick(adj.length? adj : LETTERS.filter(s=>s!==back.sound));
           if(prompt==="Same" && cur.sound===back.sound){ cur.sound = pick(far.length? far : adj); }
           if(prompt==="Before" && !(LETTERS.indexOf(cur.sound)<bi)) cur.sound = back.sound; // equality lure
-          if(prompt==="After"  && !(LETTERS.indexOf(cur.sound)>bi)) cur.sound = back.sound; // equality lure
+          if(prompt==="After" && !(LETTERS.indexOf(cur.sound)>bi)) cur.sound = back.sound; // equality lure
         }else{
-          cur.sound = pick(far.length? far : (LETTERS.filter(s=>s!==back.sound)));
+          cur.sound = pick(far.length? far : LETTERS.filter(s=>s!==back.sound));
         }
       } else if(rel==="color"){
         if(role==="TRUE"){
-          if(prompt==="Same")     cur.color = back.color;
+          if(prompt==="Same") cur.color = back.color;
           if(prompt==="Opposite") cur.color = complementHex(back.color);
         }else if(role==="LURE"){
           cur.color = nearHue(back.color);
@@ -505,36 +515,33 @@
             cur.color = nearHue(back.color);
           }
         }else{ // FOIL
-          // pick a near but not equal/complement hue; fine as foil
-          cur.color = nearHue(back.color);
+          cur.color = pick(COLORS.filter(c => c !== back.color && c !== complementHex(back.color)));
         }
       } else if(rel==="shape"){
         const b = back.shape.scale;
         const smaller = SCALES.filter(s=> s<b);
-        const bigger  = SCALES.filter(s=> s>b);
+        const bigger = SCALES.filter(s=> s>b);
         const adj = SCALES.filter(s=> Math.abs(s-b)===1);
         const far = SCALES.filter(s=> Math.abs(s-b)>=2);
         if(role==="TRUE"){
-          if(prompt==="Same")    cur.shape.scale = b;
+          if(prompt==="Same") cur.shape.scale = b;
           if(prompt==="Smaller") cur.shape.scale = smaller.length? pick(smaller) : b;
-          if(prompt==="Bigger")  cur.shape.scale = bigger.length? pick(bigger) : b;
+          if(prompt==="Bigger") cur.shape.scale = bigger.length? pick(bigger) : b;
         }else if(role==="LURE"){
-          cur.shape.scale = adj.length? pick(adj) : b;
+          cur.shape.scale = adj.length? pick(adj) : (far.length ? pick(far) : b);
           if(prompt==="Same" && cur.shape.scale===b){
-            cur.shape.scale = adj.length? pick(adj) : b;
+            cur.shape.scale = adj.length? pick(adj) : far.length ? pick(far) : b;
           }
         }else{
-          if(far.length) cur.shape.scale = pick(far);
+          cur.shape.scale = far.length ? pick(far) : adj.length ? pick(adj) : b;
         }
       }
     }
-
     // For each modality, generate prompt schedule and assign TRUE/LURE/FOIL roles
     function generatePromptsAndAdjust(seq, relations, n, truePct, lurePct){
       const prompts = {};
       const T = seq.length;
       const candidateIdxs = Array.from({length: T - n}, (_,k)=> k + n);
-
       relations.forEach(rel=>{
         const p = Array.from({length: T}, ()=> pick(PROMPTS[rel]));
         const idxs = candidateIdxs.slice(); shuffle(idxs);
@@ -542,10 +549,9 @@
         const numLure = Math.round(idxs.length * (lurePct/100));
         const trueIdxs = new Set(idxs.slice(0, numTrue));
         const lureIdxs = new Set(idxs.slice(numTrue, numTrue + numLure));
-
         for(const i of candidateIdxs){
           const back = seq[i-n];
-          const cur  = seq[i];
+          const cur = seq[i];
           const prompt = p[i];
           const role = trueIdxs.has(i) ? "TRUE" : lureIdxs.has(i) ? "LURE" : "FOIL";
           adjustStimulusForRole(rel, prompt, cur, back, role);
@@ -554,10 +560,8 @@
         }
         prompts[rel] = p;
       });
-
       return prompts;
     }
-
     // UI build: 3x3 grid
     const stimArea = $("#stimArea");
     const cells = [];
@@ -566,6 +570,7 @@
         const d = document.createElement("div");
         d.className="cell";
         d.dataset.x = x; d.dataset.y = y;
+        d.setAttribute("aria-label", `Cell at row ${y+1}, column ${x+1}`);
         cells.push(d);
         stimArea.appendChild(d);
       }
@@ -579,20 +584,24 @@
       const cell = cells.find(c => Number(c.dataset.x)===px && Number(c.dataset.y)===py);
       if(!cell) return;
       cell.classList.add("active");
-
       // Draw shape with scale and color
-      const scale = item.shape.scale; // 1..3
+      const scale = item.shape.scale;// 1..3
       const sz = 26 + scale*14; // 40..68 approx
+      let color = item.color;
+      if($("#colorblind").checked){
+        const hsl = hexToHsl(color);
+        color = hslToHex({h: hsl.h, s: 0, l: hsl.l}); // Grayscale
+      }
       if(item.shape.type==="circle"){
         const d = document.createElement("div");
         d.className="dot";
         d.style.width = d.style.height = sz+"px";
-        d.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${item.color})`;
+        d.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${color})`;
         d.style.boxShadow = "0 10px 30px rgba(0,0,0,0.35)";
         cell.appendChild(d);
       } else if(item.shape.type==="square"){
         const d = document.createElement("div");
-        d.style.width=sz+"px"; d.style.height=sz+"px"; d.style.background=item.color; d.style.borderRadius="10px";
+        d.style.width=sz+"px"; d.style.height=sz+"px"; d.style.background=color; d.style.borderRadius="10px";
         d.style.boxShadow="0 10px 30px rgba(0,0,0,0.35)";
         cell.appendChild(d);
       } else { // triangle
@@ -601,12 +610,11 @@
         d.style.width="0"; d.style.height="0";
         d.style.borderLeft=half+"px solid transparent";
         d.style.borderRight=half+"px solid transparent";
-        d.style.borderBottom=(half*2)+"px solid "+item.color;
+        d.style.borderBottom=(half*2)+"px solid "+color;
         d.style.transform="translateY(6px)";
         cell.appendChild(d);
       }
     }
-
     // Build relation buttons
     const relationBar = $("#relationBar");
     function buildRelationButtons(relations){
@@ -616,7 +624,7 @@
         btn.className="rel-btn kbd";
         btn.dataset.rel = rel;
         btn.setAttribute("data-key", String((idx+1)%10 || 0));
-        btn.setAttribute("aria-label", `Relation ${rel}`);
+        btn.setAttribute("aria-label", `Relation button for ${rel}`);
         btn.innerHTML = `<span class="title">${rel.charAt(0).toUpperCase()+rel.slice(1)}</span>`;
         const sub = document.createElement("span"); sub.className="sub"; sub.textContent="...";
         btn.appendChild(sub);
@@ -624,7 +632,6 @@
         relationBar.appendChild(btn);
       });
     }
-
     // State
     const state = {
       running:false,
@@ -647,7 +654,6 @@
       jitterOn:true,
       adaptiveOn:false
     };
-
     // Controls
     const nLevel = $("#nLevel");
     const stimMs = $("#stimMs");
@@ -657,10 +663,12 @@
     const matchRatio = $("#matchRatio");
     const lurePct = $("#lurePct");
     const dynamicLabels = $("#dynamicLabels");
-    const cueOn = $("#cueOn");
+    const strictWindow = $("#strictWindow");
     const jitterOn = $("#jitterOn");
     const adaptiveOn = $("#adaptiveOn");
-
+    const soundOn = $("#soundOn");
+    const voiceOn = $("#voiceOn");
+    const colorblind = $("#colorblind");
     const progressBar = $("#progressBar");
     const progressText = $("#progressText");
     const nLabel = $("#nLabel");
@@ -668,23 +676,24 @@
     const accEl = $("#acc");
     const streakEl = $("#streak");
     const trialCounter = $("#trialCounter");
-
     const startBtn = $("#startBtn");
     const stopBtn = $("#stopBtn");
     const undoBtn = $("#undoBtn");
+    const backBtn = $("#backBtn");
     const stepBtn = $("#stepBtn");
     const seedBtn = $("#seedBtn");
     const passBtn = $("#passBtn");
     const hintBtn = $("#hintBtn");
     const repeatBtn = $("#repeatBtn");
     const clearBtn = $("#clearBtn");
-
+    const exportBtn = $("#exportBtn");
+    const resetBtn = $("#resetBtn");
     function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
     function parseRelationsField(){
       const raw = relationsInput.value.split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
       const supported = ["position","sound","color","shape"];
       const rels = raw.filter(r=> supported.includes(r));
-      return rels.length? rels : ["position"];
+      return rels.length ? rels : supported; // Default to all if empty
     }
     function ensureModStats(){
       state.relations.forEach(rel=>{
@@ -693,16 +702,58 @@
     }
     function refreshConfig(){
       state.n = clamp(parseInt(nLevel.value)||1,1,9);
-      state.len = clamp(parseInt(len.value)||24, 8, 500);
+      state.len = clamp(parseInt(len.value)||24, 8, 300);
       state.matchRatio = clamp(parseInt(matchRatio.value)||33, 0, 90);
       state.lurePct = clamp(parseInt(lurePct.value)||45, 0, 70);
       state.relations = parseRelationsField();
-      state.strictWindow = $("#strictWindow").checked;
+      state.strictWindow = strictWindow.checked;
       state.jitterOn = jitterOn.checked;
       state.adaptiveOn = adaptiveOn.checked;
+      if(colorblind.checked && state.relations.includes("color")) {
+        log("Colorblind mode on: Consider removing 'color' from modalities for better experience.");
+        if(!voiceOn.checked) voiceOn.checked = true; // Auto-enable voice
+      }
       nLabel.textContent = state.n;
     }
-
+    function saveSettings(){
+      localStorage.setItem("rnback_settings", JSON.stringify({
+        nLevel: nLevel.value,
+        stimMs: stimMs.value,
+        isiMs: isiMs.value,
+        len: len.value,
+        relations: relationsInput.value,
+        matchRatio: matchRatio.value,
+        lurePct: lurePct.value,
+        dynamicLabels: dynamicLabels.checked,
+        strictWindow: strictWindow.checked,
+        jitterOn: jitterOn.checked,
+        adaptiveOn: adaptiveOn.checked,
+        soundOn: soundOn.checked,
+        voiceOn: voiceOn.checked,
+        colorblind: colorblind.checked
+      }));
+    }
+    function loadSettings(){
+      const saved = localStorage.getItem("rnback_settings");
+      if(saved){
+        const d = JSON.parse(saved);
+        nLevel.value = d.nLevel || 1;
+        stimMs.value = d.stimMs || 1300;
+        isiMs.value = d.isiMs || 300;
+        len.value = d.len || 24;
+        relationsInput.value = d.relations || "position, sound, color, shape";
+        matchRatio.value = d.matchRatio || 33;
+        lurePct.value = d.lurePct || 45;
+        dynamicLabels.checked = d.dynamicLabels ?? true;
+        strictWindow.checked = d.strictWindow ?? false;
+        jitterOn.checked = d.jitterOn ?? true;
+        adaptiveOn.checked = d.adaptiveOn ?? false;
+        soundOn.checked = d.soundOn ?? true;
+        voiceOn.checked = d.voiceOn ?? false;
+        colorblind.checked = d.colorblind ?? false;
+      }
+      refreshConfig();
+    }
     function newSequence(){
       refreshConfig();
       state.seq = Array.from({length: state.len}, ()=> generateItem());
@@ -724,42 +775,36 @@
       trialCounter.textContent = "0";
       log(`Sequence generated: len=${state.len}, N=${state.n}, rels=${state.relations.join("+")}, true≈${state.matchRatio}%, lure≈${state.lurePct}%`);
     }
-
     function progress(idx){
       progressText.textContent = `${idx} / ${state.len}`;
       progressBar.style.width = `${Math.round(idx/state.len*100)}%`;
       trialCounter.textContent = String(idx);
     }
-
-    function openWindow(){ state.windowOpen = true; if($("#soundOn").checked) sfx.tick(); updateRelationButtons(); }
+    function openWindow(){ state.windowOpen = true; if(soundOn.checked) sfx.tick(); updateRelationButtons(); }
     function closeWindow(){ state.windowOpen = false; updateRelationButtons(); }
-
     function present(i, withAudio=true){
       drawStimulus(state.seq[i]);
-      if(withAudio && $("#soundOn").checked){
+      if(withAudio && soundOn.checked){
         const letter = state.seq[i].sound;
         const map = {A:440,B:494,C:523,D:587,E:659};
         tone(map[letter] || 392, 0.09, "sine", 0.04);
       }
+      if(voiceOn.checked && 'speechSynthesis' in window){
+        const utt = new SpeechSynthesisUtterance();
+        utt.text = `Position ${posIndex(state.seq[i].position)}. Sound ${state.seq[i].sound}. Color ${state.seq[i].color.slice(1)}. Shape ${state.seq[i].shape.type} size ${state.seq[i].shape.scale}.`;
+        utt.rate = 1.2; // Slightly faster for training
+        setTimeout(()=> speechSynthesis.speak(utt), 100); // Delay to avoid overlap with tone
+      }
     }
-
     function relationIsTrue(rel, i){
       const n = state.n;
       if(i < n) return false;
       const prompt = state.prompts[rel][i];
       if(!prompt) return false;
-      if(rel==="position"){
-        return Eval.position(prompt, state.seq[i].position, state.seq[i-n].position);
-      }else if(rel==="sound"){
-        return Eval.sound(prompt, state.seq[i].sound, state.seq[i-n].sound);
-      }else if(rel==="color"){
-        return Eval.color(prompt, state.seq[i].color, state.seq[i-n].color);
-      }else if(rel==="shape"){
-        return Eval.shape(prompt, state.seq[i].shape, state.seq[i-n].shape);
-      }
-      return false;
+      const cur = state.seq[i][rel === "shape" ? "shape" : rel];
+      const prev = state.seq[i-n][rel === "shape" ? "shape" : rel];
+      return Eval[rel](prompt, cur, prev);
     }
-
     function updateRelationButtons(){
       const i = state.i;
       state.relations.forEach((rel, idx)=>{
@@ -777,23 +822,20 @@
         }
         btn.classList.remove("matching","pending");
         const isTrue = relationIsTrue(rel, i);
-        if(isTrue && ($("#cueOn")?.checked || !dynamicLabels.checked)){
+        if(isTrue){
           btn.classList.add("matching");
           if(state.strictWindow && !state.windowOpen) btn.classList.add("pending");
         }
         btn.setAttribute("data-key", String((idx+1)%10 || 0));
       });
     }
-
     function calcAccuracy(){
       const judged = state.responses.filter(r => r.kind!=="pre");
       if(!judged.length) return 100;
       const hits = judged.filter(r=>r.hit).length;
-      const total = judged.length;
-      return Math.round((hits/total)*100);
+      return Math.round((hits/judged.length)*100);
     }
-
-    // SDT helpers
+    // SDT helpers (Signal Detection Theory for sensitivity/bias)
     function erfinv(x){
       // Approximation (Winitzki)
       const a = 0.147;
@@ -812,7 +854,7 @@
       const Fn = s.fa + s.cr;
       if(!Hn || !Fn) return {d:0, c:0};
       const pHit = Math.min(1-1/(2*Hn), Math.max(1/(2*Hn), s.hits/Hn));
-      const pFA  = Math.min(1-1/(2*Fn), Math.max(1/(2*Fn),  s.fa/Fn));
+      const pFA = Math.min(1-1/(2*Fn), Math.max(1/(2*Fn), s.fa/Fn));
       const zH = zOf(pHit), zF = zOf(pFA);
       const d = zH - zF;
       const c = -0.5*(zH + zF);
@@ -824,65 +866,57 @@
         const {d,c} = dPrimeFor(rel);
         const rts = state.perModStats[rel].rts;
         const meanRt = rts.length ? Math.round(rts.reduce((a,b)=>a+b,0)/rts.length) : 0;
-        return `${rel.padEnd(8)} d'=${d.toFixed(2)}  c=${c.toFixed(2)}  RT≈${meanRt}ms`;
+        return `${rel.padEnd(8)} d'=${d.toFixed(2)} c=${c.toFixed(2)} RT≈${meanRt}ms`;
       });
       metricsEl.textContent = rows.join("\n");
     }
-
     function updateSdt(rel, hit, i, rt){
       ensureModStats();
       const isSignal = relationIsTrue(rel, i);
       const s = state.perModStats[rel];
       if(isSignal && hit) s.hits++; else if(isSignal && !hit) s.misses++;
-      if(!isSignal && hit) s.fa++;   else if(!isSignal && !hit) s.cr++;
+      if(!isSignal && hit) s.fa++; else if(!isSignal && !hit) s.cr++;
       if(Number.isFinite(rt)) s.rts.push(rt);
     }
-
     function tryRespond(rel){
-      if(state.strictWindow && !state.windowOpen){ if($("#soundOn").checked) sfx.err(); return; }
+      if(state.strictWindow && !state.windowOpen){ if(soundOn.checked) sfx.err(); return; }
       if(!state.running && state.i<0){ log("Start the session to respond."); return; }
       if(state.respondedThisTrial.has(rel)) return; // one response per modality per trial
       state.respondedThisTrial.add(rel);
-
       const i = state.i;
       const hit = relationIsTrue(rel, i);
       const rt = performance.now() - state.trialStartTs;
       state.responses.push({i, rel, hit, ts: performance.now(), rt, kind:"rel"});
-      if(hit){ state.score += 1; state.streak += 1; if($("#soundOn").checked) sfx.ok(); }
-      else { state.streak = 0; if($("#soundOn").checked) sfx.err(); }
+      if(hit){ state.score += 1; state.streak += 1; if(soundOn.checked) sfx.ok(); }
+      else { state.streak = 0; if(soundOn.checked) sfx.err(); }
       scoreEl.textContent = String(state.score);
       streakEl.textContent = String(state.streak);
       accEl.textContent = `${calcAccuracy()}%`;
-
       updateSdt(rel, hit, i, rt);
       renderMetrics();
-
       const btn = relationBar.querySelector(`.rel-btn[data-rel="${rel}"]`);
       if(btn){
         if(hit) btn.classList.add("matching");
         btn.animate([{transform:"scale(1)"},{transform:"scale(0.96)"},{transform:"scale(1)"}], {duration:120});
       }
-      log(`${hit? "HIT":"MISS"} on ${rel} with prompt "${state.prompts[rel][i] || "?"}" @ t=${i} (N=${state.n})  RT=${Math.round(rt)}ms`);
+      log(`${hit? "HIT":"MISS"} on ${rel} with prompt "${state.prompts[rel][i] || "?"}" @ t=${i} (N=${state.n}) RT=${Math.round(rt)}ms`);
     }
-
     function respondNoMatch(){
       const i = state.i;
       const anyTrue = state.relations.some(rel=> relationIsTrue(rel, i));
       const hit = !anyTrue;
       state.responses.push({i, rel:"none", hit, ts: performance.now(), kind:"none"});
-      if(hit){ state.score += 1; state.streak += 1; if($("#soundOn").checked) sfx.ok(); }
-      else { state.streak = 0; if($("#soundOn").checked) sfx.err(); }
+      if(hit){ state.score += 1; state.streak += 1; if(soundOn.checked) sfx.ok(); }
+      else { state.streak = 0; if(soundOn.checked) sfx.err(); }
       scoreEl.textContent = String(state.score);
       streakEl.textContent = String(state.streak);
       accEl.textContent = `${calcAccuracy()}%`;
       renderMetrics();
       log(`${hit? "Correct":"Incorrect"} "No match" @ t=${i}`);
     }
-
     // Loop
     let stepTimeout = null;
-    const jitterFn = (v)=> state.jitterOn ? Math.max(100, Math.round(v * (0.85 + rng()*0.3))) : v;
-
+    const jitterFn = (v)=> state.jitterOn ? Math.max(100, Math.round(v * (0.8 + rng()*0.4))) : v; // Balanced jitter
     function runLoop(){
       if(!state.running) return;
       state.i += 1;
@@ -893,12 +927,10 @@
       state.respondedThisTrial.clear();
       state.trialStartTs = performance.now();
       openWindow();
-
       const baseStim = clamp(parseInt(stimMs.value)||1300, 200, 4000);
       const baseGap = clamp(parseInt(isiMs.value)||300, 0, 4000);
       const stimDuration = jitterFn(baseStim);
-      const gapDuration  = jitterFn(baseGap);
-
+      const gapDuration = jitterFn(baseGap);
       clearTimeout(stepTimeout);
       stepTimeout = setTimeout(()=>{
         closeWindow();
@@ -914,19 +946,18 @@
       }, stimDuration);
       updateRelationButtons();
     }
-
     function finish(){
       state.running = false;
       startBtn.disabled = false;
       stopBtn.disabled = true;
       undoBtn.disabled = false;
       stepBtn.disabled = false;
+      backBtn.disabled = false;
       passBtn.disabled = true;
       renderMetrics();
       log(`Finished. Score=${state.score} Acc=${calcAccuracy()}%`);
       maybeAdapt(true);
     }
-
     function start(){
       if(state.running) return;
       audio.resume?.();
@@ -937,6 +968,7 @@
       stopBtn.disabled = false;
       undoBtn.disabled = true;
       stepBtn.disabled = true;
+      backBtn.disabled = true;
       passBtn.disabled = false;
       runLoop();
       log("Started.");
@@ -949,11 +981,11 @@
       stopBtn.disabled = true;
       undoBtn.disabled = false;
       stepBtn.disabled = false;
+      backBtn.disabled = false;
       passBtn.disabled = true;
       renderMetrics();
       log("Stopped.");
     }
-
     function stepOnce(){
       if(state.running) return;
       state.i += 1;
@@ -972,7 +1004,22 @@
       sfx.cue();
       updateRelationButtons();
     }
-
+    function backOnce(){
+      if(state.running) return;
+      if(state.i <= 0){
+        log("At beginning. Cannot go back.");
+        return;
+      }
+      state.i -= 1;
+      progress(state.i);
+      present(state.i, false); // No audio for review
+      state.respondedThisTrial.clear();
+      // No timing or window for review
+      closeWindow();
+      sfx.tick(); // Soft cue
+      updateRelationButtons();
+      log(`Reviewed back @ t=${state.i} (no scoring/response)`);
+    }
     function undo(){
       const last = state.responses.pop();
       if(!last){ log("Nothing to undo."); return; }
@@ -989,7 +1036,6 @@
       streakEl.textContent = String(state.streak);
       accEl.textContent = `${calcAccuracy()}%`;
     }
-
     function peek(){
       const i = state.i;
       const n = state.n;
@@ -999,21 +1045,18 @@
         .map(rel => `${rel}:${state.prompts[rel][i]}`);
       log(`Peek @ t=${i}: ${truths.length? truths.join(" | "): "no prompts true"}`);
     }
-
     function repeatStim(){
       if(state.i < 0) return;
       present(state.i);
       openWindow();
       updateRelationButtons();
     }
-
     function clearPrompts(){
       dynamicLabels.checked = false;
       updateRelationButtons();
       log("Dynamic prompts disabled.");
     }
-
-    // Adaptive N (optional)
+    // Adaptive N (improved: lower d' target for aggression, add bias check)
     function maybeAdapt(force=false){
       if(!state.adaptiveOn) return;
       const sampled = state.relations.map(rel => ({rel, ...dPrimeFor(rel)}));
@@ -1021,18 +1064,18 @@
       // Weakest modality drives adaptation
       sampled.sort((a,b)=> a.d - b.d);
       const weak = sampled[0];
-      const dTarget = 1.2;
+      const dTarget = 1.1; // Slightly lower for more progression
       const s = state.perModStats[weak.rel] || {fa:0,cr:0};
       const F = s.fa + s.cr;
       const faRate = F ? s.fa / F : 0;
-      const canIncrease = weak.d > dTarget && faRate <= 0.15;
-      const shouldDecrease = weak.d < dTarget*0.6;
+      const canIncrease = weak.d > dTarget && faRate <= 0.15 && weak.c < 0.5; // Not too biased
+      const shouldDecrease = weak.d < dTarget*0.6 || weak.c > 0.5; // Decrease if biased conservative
       let changed = false;
       if(canIncrease && state.n < 9){ state.n += 1; changed = true; }
       else if(shouldDecrease && state.n > 1){ state.n -= 1; changed = true; }
       if(changed){
         nLabel.textContent = state.n;
-        log(`Adaptive N: ${canIncrease? "↑" : "↓"} N=${state.n} (weak=${weak.rel}, d'=${weak.d.toFixed(2)}, FA=${(faRate*100).toFixed(0)}%)`);
+        log(`Adaptive N: ${canIncrease? "↑" : "↓"} N=${state.n} (weak=${weak.rel}, d'=${weak.d.toFixed(2)}, FA=${(faRate*100).toFixed(0)}%, bias c=${weak.c.toFixed(2)})`);
       } else if(force){
         log(`Adaptive check: no change (weak=${weak.rel}, d'=${weak.d.toFixed(2)})`);
       }
@@ -1041,7 +1084,6 @@
       if(!state.adaptiveOn) return;
       if(state.i>0 && state.i % 8 === 0) maybeAdapt();
     }
-
     // Keyboard
     document.addEventListener("keydown", (e)=>{
       if(e.target && ["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)) return;
@@ -1055,38 +1097,47 @@
       const btn = $(`.rel-btn[data-key="${k}"]`);
       if(btn){ e.preventDefault(); tryRespond(btn.dataset.rel); }
     });
-
     // Wire controls
-    $("#strictWindow").addEventListener("change", ()=>{ state.strictWindow = $("#strictWindow").checked; updateRelationButtons(); });
-    $("#soundOn").addEventListener("change", ()=>{ if($("#soundOn").checked) sfx.cue(); });
-    dynamicLabels.addEventListener("change", ()=> updateRelationButtons());
-    cueOn?.addEventListener("change", ()=> updateRelationButtons());
-    jitterOn.addEventListener("change", ()=>{ state.jitterOn = jitterOn.checked; });
-    adaptiveOn.addEventListener("change", ()=>{ state.adaptiveOn = adaptiveOn.checked; });
-
+    strictWindow.addEventListener("change", ()=>{ state.strictWindow = strictWindow.checked; updateRelationButtons(); saveSettings(); });
+    soundOn.addEventListener("change", ()=>{ if(soundOn.checked) sfx.cue(); saveSettings(); });
+    dynamicLabels.addEventListener("change", ()=> { updateRelationButtons(); saveSettings(); });
+    jitterOn.addEventListener("change", ()=>{ state.jitterOn = jitterOn.checked; saveSettings(); });
+    adaptiveOn.addEventListener("change", ()=>{ state.adaptiveOn = adaptiveOn.checked; saveSettings(); });
+    voiceOn.addEventListener("change", saveSettings);
+    colorblind.addEventListener("change", ()=>{ saveSettings(); refreshConfig(); newSequence(); });
     startBtn.onclick = start;
     stopBtn.onclick = stop;
     stepBtn.onclick = stepOnce;
+    backBtn.onclick = backOnce;
     undoBtn.onclick = undo;
     seedBtn.onclick = ()=>{ reseed(); newSequence(); };
     passBtn.onclick = respondNoMatch;
     hintBtn.onclick = peek;
     repeatBtn.onclick = repeatStim;
     clearBtn.onclick = clearPrompts;
-
+    exportBtn.onclick = ()=>{
+      const blob = new Blob([logEl.textContent], {type: "text/plain"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rnback_log_${new Date().toISOString().slice(0,10)}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+    resetBtn.onclick = ()=>{ localStorage.removeItem("rnback_settings"); location.reload(); };
     [nLevel, stimMs, isiMs, len, relationsInput, matchRatio, lurePct].forEach(el=>{
       el.addEventListener("change", ()=>{
         if(state.running) return;
         if(el===relationsInput) buildRelationButtons(parseRelationsField());
         newSequence();
+        saveSettings();
       });
     });
-
     // Init
+    loadSettings();
     newSequence();
-
     // Expose for console
-    window.RNBack = { state, newSequence, start, stop, stepOnce, reseed };
+    window.RNBack = { state, newSequence, start, stop, stepOnce, backOnce, reseed };
   </script>
 </body>
 </html>
