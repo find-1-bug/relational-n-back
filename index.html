@@ -122,8 +122,8 @@
     .btn.warn{background:linear-gradient(180deg, #ff9a5c, #f0722e); border-color:#ff9a5c}
     .btn:disabled{opacity:.5; cursor:not-allowed}
     .log{
-      min-height:62px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      background:#0b102a; border:1px dashed #2b3561; border-radius:10px; padding:10px; color:#b6c3ff; font-size:12px; overflow:auto;
+      height:100px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background:#0b102a; border:1px dashed #2b3561; border-radius:10px; padding:10px; color:#b6c3ff; font-size:12px; overflow-y:auto;
     }
     .legend{font-size:12px; color:#9fb4ff; text-align:center}
     .bar{height:8px; background:#0b102a; border:1px solid #2b3561; border-radius:999px; overflow:hidden;}
@@ -892,7 +892,8 @@
       if(voiceOn.checked && 'speechSynthesis' in window){
         const utt = new SpeechSynthesisUtterance();
         utt.text = `Position ${posIndex(state.seq[i].position)}. Sound ${state.seq[i].sound}. Color ${state.seq[i].color.slice(1)}. Shape ${state.seq[i].shape}.`;
-        utt.rate = 1.2; // Slightly faster for training
+        utt.rate = 1.2;
+        utt.volume = 1;
         setTimeout(()=> speechSynthesis.speak(utt), 100); // Delay to avoid overlap with tone
       }
     }
@@ -1132,11 +1133,10 @@
       }
       state.i -= 1;
       progress(state.i);
-      present(state.i, false); // No audio for review
+      present(state.i, true); // Play audio for review
       state.respondedThisTrial.clear();
       // No timing or window for review
       closeWindow();
-      sfx.tick(); // Soft cue
       updateRelationButtons();
       log(`Reviewed back @ t=${state.i} (no scoring/response)`);
     }
@@ -1254,10 +1254,10 @@
     clearBtn.onclick = clearPrompts;
     exportBtn.onclick = ()=>{
       let csv = "version,seed,i,N,modality,prompt,role,response,hit,RT,windowType,stimMs,isiMs,multiTrue\n";
-      const responsesByTrial = state.responses.reduce((acc,r)=>{ 
+      const responsesByTrial = state.responses.reduce((acc,r)=>{
         if(!acc[r.i]) acc[r.i] = [];
-        acc[r.i].push(r); 
-        return acc; 
+        acc[r.i].push(r);
+        return acc;
       },{});
       for(let i=0; i<state.len; i++){
         state.relations.forEach(rel=>{
