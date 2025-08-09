@@ -124,7 +124,6 @@ So I built a trainer from scratch — using **GPT-5** for code generation and **
 
 - **Lures:** 45–50%
 - **Stimulus Time:** 2000–2500ms (with jitter on)
-- **Strict Window:** ON
 - **Dynamic Prompts:** ON
 - **Adaptive N:** Optional after baseline
 
