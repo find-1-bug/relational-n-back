@@ -34,11 +34,10 @@
       display:inline-flex; align-items:center; gap:6px; background:#12162a99; backdrop-filter: blur(6px);
     }
     .container{
-      width:100%; max-width:1100px; padding:0 20px 30px; display:grid; grid-template-columns: 320px 1fr; gap:20px;
+      width:100%; max-width:1100px; padding:0 20px 30px; display:grid; grid-template-columns: 340px 1fr; gap:20px;
     }
     @media (max-width: 960px){
       .container{grid-template-columns:1fr; padding:0 10px 80px;}
-      .stimulus-area{grid-template-columns: repeat(3, 90px); grid-template-rows: repeat(3, 90px); gap:8px;}
     }
     .card{
       background:linear-gradient(180deg, #151a33, #11162c);
@@ -57,12 +56,12 @@
     label{font-size:12px; color:#b6bdd9; display:block; margin-bottom:6px;}
     input[type="number"], select, input[type="text"]{
       width:100%; padding:10px 12px; background:#0e1230; color:var(--text);
-      border:1px solid #2c375f; border-radius:10px; outline:none;
+      border:1px solid #2c375f; border-radius:10px; outline:none; word-break:break-all;
     }
     input[type="range"]{width:100%}
     .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
     .hint{font-size:12px; color:#b6bdd9}
-    .switch{display:inline-flex; align-items:center; gap:10px; cursor:pointer; user-select:none; font-size:13px; color:#d7defa; min-width:150px;}
+    .switch{display:inline-flex; align-items:center; gap:10px; cursor:pointer; user-select:none; font-size:13px; color:#d7defa; min-width:160px;}
     .switch input{display:none}
     .toggle{
       width:44px; height:24px; background:#0e1230; border:1px solid #2c375f; border-radius:999px; position:relative; transition:.2s ease all; flex-shrink:0;
@@ -82,16 +81,12 @@
       padding:6px 10px; border:1px solid #2b3561; border-radius:10px; background:#0e1331; color:#cfe4ff;
     }
     .stimulus-area{
-      display:grid; grid-template-columns: repeat(3, 120px); grid-template-rows: repeat(3, 120px); gap:12px; justify-content:center; align-content:center; padding:8px 0;
+      display:grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap:12px; justify-content:center; align-content:center; padding:8px 0; max-width:min(90vw, 360px); margin:0 auto;
+      aspect-ratio:1; padding-inline: clamp(8px, 3vw, 16px);
     }
     .cell{
-      border-radius:12px; background:#0e1331; border:1px solid #2b3561; display:flex; align-items:center; justify-content:center;
-      position:relative; overflow:hidden;
-    }
-    .cell .dot{
-      width:46px; height:46px; border-radius:50%;
-      background: radial-gradient(circle at 30% 30%, #b7c8ff, #6f86ff);
-      box-shadow: 0 10px 30px rgba(111,134,255,0.45);
+      border-radius:12px; background:transparent; border:1px solid #ffffff; display:flex; align-items:center; justify-content:center;
+      position:relative; overflow:hidden; aspect-ratio:1/1;
     }
     .cell.active{
       outline:2px solid var(--accent);
@@ -107,7 +102,8 @@
       position:absolute; top:-10px; left:50%; transform:translate(-50%,-100%);
       background:#0b102b; border:1px solid #2a3560; padding:3px 8px; border-radius:8px; font-size:11px; color:#9fb4ff; opacity:.9;
     }
-    .rel-btn.kbd::before{
+    .rel-btn.kbd::before,
+    .btn.kbd::before{
       content:attr(data-key);
       font-weight:700; font-size:11px; background:#0b102b; border:1px solid #2a3560; color:#9fb4ff; padding:3px 6px; border-radius:6px;
     }
@@ -157,9 +153,13 @@
       .controls .manual-controls button {
         flex: 1;
       }
+      .stimulus-area { max-width:100%; gap:8px; }
+      .cell .dot { width: 80%; height: 80%; }
+      /* Adjust shape sizes dynamically */
+      .cell > div { max-width: 80%; max-height: 80%; }
     }
   </style>
-  <meta name="description" content="Relational N‑Back trainer with dynamic relation prompts on classic modality buttons. Position SameRow/SameCol/Closer/Farther, Sound Before/Same/After, Color Same/Opposite (true complement), Shape scale Smaller/Same/Bigger." />
+  <meta name="description" content="Relational N‑Back trainer with dynamic relation prompts on classic modality buttons. Position SameRow/SameCol/Closer/Farther, Sound Before/Same/After, Color Same/Opposite (true complement), Shape Fewer/Same/More sides." />
   <meta name="theme-color" content="#0f1220" />
   <script type="importmap">
   {
@@ -204,9 +204,35 @@
         </div>
         <div class="grid cols-2">
           <div>
-            <label for="relations">Active modalities (comma‑sep)</label>
-            <input id="relations" type="text" value="position, sound, color, shape" />
-            <div class="hint">Each modality has a stable button label and a dynamic prompt that switches among relations.</div>
+            <label>Active modalities</label>
+            <div class="row">
+              <label class="switch" title="Position modality">
+                <input id="mod-position" type="checkbox" checked />
+                <span class="toggle"></span>
+                Position
+              </label>
+            </div>
+            <div class="row">
+              <label class="switch" title="Sound modality">
+                <input id="mod-sound" type="checkbox" checked />
+                <span class="toggle"></span>
+                Sound
+              </label>
+            </div>
+            <div class="row">
+              <label class="switch" title="Color modality">
+                <input id="mod-color" type="checkbox" checked />
+                <span class="toggle"></span>
+                Color
+              </label>
+            </div>
+            <div class="row">
+              <label class="switch" title="Shape modality">
+                <input id="mod-shape" type="checkbox" checked />
+                <span class="toggle"></span>
+                Shape
+              </label>
+            </div>
           </div>
           <div>
             <label for="matchRatio">Prompt‑true ratio (%)</label>
@@ -274,6 +300,15 @@
             </label>
           </div>
         </div>
+        <div class="grid cols-2">
+          <div class="row">
+            <label class="switch" title="Show visual feedback for correct answers.">
+              <input id="showFeedback" type="checkbox" checked />
+              <span class="toggle"></span>
+              Show feedback
+            </label>
+          </div>
+        </div>
         <div class="row">
           <span class="pill">Keys: 1..9 = modality buttons, N = No match, Space = Start/Stop</span>
         </div>
@@ -313,7 +348,7 @@
       <div id="stimArea" class="stimulus-area" aria-live="polite" aria-atomic="true"></div>
       <div class="relation-bar" id="relationBar"></div>
       <div class="controls">
-        <button id="passBtn" class="btn">No match</button>
+        <button id="passBtn" class="btn kbd" data-key="N">No match</button>
         <button id="hintBtn" class="btn">Peek</button>
         <button id="repeatBtn" class="btn">Repeat Stimulus</button>
         <button id="clearBtn" class="btn warn">Clear Prompts</button>
@@ -322,26 +357,43 @@
       <div id="metrics" class="metrics"></div>
       <div class="tiny" style="text-align:center; padding-bottom:8px">
         Grid index: 1..3 top row, 4..6 middle, 7..9 bottom. Sound A..E. Color uses true hue complement for “Opposite”.
-        Shape relation is on scale: Smaller / Same / Bigger. (Colorblind mode uses grayscale.)
+        Shape relation is on sides: Fewer / Same / More. (Colorblind mode uses grayscale.)
       </div>
     </section>
   </div>
   <footer>
     Inspired by established dual n‑back UX patterns such as brainscale.net and community adaptations like 4skinskywalker’s dichotic version. A relational variant has been discussed in community posts (e.g., dev.to). Improved with accessibility features.
   </footer>
+  <div id="ariaAnnounce" aria-live="assertive" style="position:absolute; width:1px; height:1px; overflow:hidden; clip: rect(0,0,0,0);"></div>
+  <div id="helpOverlay" style="display:none; position:fixed; top:20%; left:20%; right:20%; bottom:20%; background:var(--panel); border:1px solid var(--muted); border-radius:14px; padding:20px; z-index:20; overflow:auto;">
+    <h2>Help & Examples</h2>
+    <p>Keyboard shortcuts: 1-4 for modality buttons, N for No match, Space to start/stop, ? to toggle this help.</p>
+    <p>Example: For "Position" with prompt "SameRow", press the Position button if the current position is in the same row as the N-back position.</p>
+    <p>Example: For "Color" with prompt "Opposite", press if the current color is the perceptual opposite of the N-back color.</p>
+    <p>Example: For "Shape" with prompt "More", press if the current shape has more sides than the N-back one.</p>
+    <button onclick="this.parentNode.style.display='none'">Close</button>
+  </div>
   <script type="module">
     import seedrandom from "seedrandom";
     // Seeded RNG
     let rng = seedrandom(String(Date.now()));
-    const reseed = (seed) => rng = seedrandom(String(seed ?? Date.now()));
+    const reseed = (seed) => { state.seed = seed ?? Date.now(); rng = seedrandom(String(state.seed)); };
     const R = (n)=>Math.floor(rng()*n);
     const pick = (arr)=>arr[R(arr.length)];
+    const balancedPick = (arr, len) => {
+      let res = [];
+      while(res.length < len){
+        res.push(...shuffle([...arr]));
+      }
+      return res.slice(0,len);
+    };
     // DOM helpers
     const $ = (s, r=document) => r.querySelector(s);
     const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
     const logEl = $("#log");
     const log = (msg)=>{ const t = new Date().toLocaleTimeString(); logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent; };
     const metricsEl = $("#metrics");
+    const ariaAnnounce = $("#ariaAnnounce");
     // Procedural audio
     const audio = new (window.AudioContext || window.webkitAudioContext)();
     function tone(freq=440, dur=0.12, type="sine", gain=0.06){
@@ -372,7 +424,7 @@
     const centerDist = (xy)=> Math.hypot(xy[0]-1, xy[1]-1);
     const LETTERS = ["A","B","C","D","E"];
     // Color-blind safe palette (deuteranomaly-friendly)
-    const COLORS = ["#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2"];
+    let COLORS = ["#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2"];
     // HSL helpers for true complement and near hues (for lures)
     function hexToHsl(hex){
       const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
@@ -403,21 +455,33 @@
     }
     const complementHex = (hex)=>{
       const hsl = hexToHsl(hex);
+      if($("#colorblind").checked) {
+        return hsl.l > 0.5 ? "#333333" : "#ffffff";
+      }
       return hslToHex({h:(hsl.h+180)%360, s:hsl.s, l:hsl.l});
     };
     const nearHue = (hex)=>{
       const hsl = hexToHsl(hex);
-      const delta = pick([-20,-15,15,20]);
-      return hslToHex({h:(hsl.h+delta+360)%360, s:hsl.s, l:hsl.l});
+      if($("#colorblind").checked) {
+        return hsl.l > 0.5 ? "#666666" : "#999999"; // mid greys for lures
+      } else {
+        let delta = pick([-20,-15,15,20]);
+        let newH = (hsl.h + delta + 360) % 360;
+        while (Math.abs(newH - hsl.h) < 5 || Math.abs(newH - ((hsl.h + 180) % 360)) < 5) {
+          delta = pick([-20,-15,15,20]);
+          newH = (hsl.h + delta + 360) % 360;
+        }
+        return hslToHex({h: newH, s: hsl.s, l: hsl.l});
+      }
     };
-    const SHAPES = ["circle","square","triangle"];
-    const SCALES = [1,2,3];
+    const SHAPES = ["circle","triangle","square"];
+    const NUM_SIDES = {circle: 0, triangle: 3, square: 4};
     // Relation prompts per modality
     const PROMPTS = {
       position: ["Equal","SameRow","SameCol","Closer","Farther"],
       sound: ["Before","Same","After"],
       color: ["Same","Opposite"],
-      shape: ["Smaller","Same","Bigger"] // relation on scale
+      shape: ["Fewer","Same","More"] // relation on number of sides
     };
     // Evaluate if the prompt is true
     const Eval = {
@@ -446,10 +510,10 @@
       },
       shape: (prompt, cur, prev)=>{
         if(!prev) return false;
-        const a = cur.scale, b = prev.scale;
+        const a = NUM_SIDES[cur], b = NUM_SIDES[prev];
         if(prompt==="Same") return a===b;
-        if(prompt==="Smaller") return a<b;
-        if(prompt==="Bigger") return a>b;
+        if(prompt==="Fewer") return a<b;
+        if(prompt==="More") return a>b;
         return false;
       }
     };
@@ -459,7 +523,7 @@
         position: pick(GRID_POS),
         sound: pick(LETTERS),
         color: pick(COLORS),
-        shape: { type: pick(SHAPES), scale: pick(SCALES) }
+        shape: pick(SHAPES)
       };
     }
     function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
@@ -479,8 +543,8 @@
           if(prompt==="Equal") cur.position = pick(neighbors.length? neighbors : far);
           if(prompt==="SameRow") cur.position = pick(GRID_POS.filter(xy => xy[0]===back.position[0])) || cur.position; // same col lure
           if(prompt==="SameCol") cur.position = pick(GRID_POS.filter(xy => xy[1]===back.position[1])) || cur.position; // same row lure
-          if(prompt==="Closer") cur.position = back.position; // equality lure
-          if(prompt==="Farther") cur.position = back.position; // equality lure
+          if(prompt==="Closer") cur.position = pick(GRID_POS.filter(xy => centerDist(xy) > centerDist(back.position))) || cur.position; // farther lure
+          if(prompt==="Farther") cur.position = pick(GRID_POS.filter(xy => centerDist(xy) < centerDist(back.position))) || cur.position; // closer lure
         }else{ // FOIL
           cur.position = pick(far.length? far : GRID_POS.filter(xy => !(xy[0]===back.position[0] && xy[1]===back.position[1])));
         }
@@ -503,6 +567,16 @@
           cur.sound = pick(far.length? far : LETTERS.filter(s=>s!==back.sound));
         }
       } else if(rel==="color"){
+        if($("#colorblind").checked){
+          if(role==="TRUE"){
+            if(prompt==="Same") cur.color = back.color;
+            if(prompt==="Opposite") cur.color = complementHex(back.color);
+          } else {
+            if(prompt==="Same") cur.color = complementHex(back.color);
+            if(prompt==="Opposite") cur.color = back.color;
+          }
+          return;
+        }
         if(role==="TRUE"){
           if(prompt==="Same") cur.color = back.color;
           if(prompt==="Opposite") cur.color = complementHex(back.color);
@@ -518,22 +592,22 @@
           cur.color = pick(COLORS.filter(c => c !== back.color && c !== complementHex(back.color)));
         }
       } else if(rel==="shape"){
-        const b = back.shape.scale;
-        const smaller = SCALES.filter(s=> s<b);
-        const bigger = SCALES.filter(s=> s>b);
-        const adj = SCALES.filter(s=> Math.abs(s-b)===1);
-        const far = SCALES.filter(s=> Math.abs(s-b)>=2);
+        const b = NUM_SIDES[back.shape];
+        const fewer = SHAPES.filter(s=> NUM_SIDES[s]<b);
+        const more = SHAPES.filter(s=> NUM_SIDES[s]>b);
+        const adj = SHAPES.filter(s=> Math.abs(NUM_SIDES[s]-b)===1 || Math.abs(NUM_SIDES[s]-b)===3); // circle-triangle diff=3
+        const far = SHAPES.filter(s=> Math.abs(NUM_SIDES[s]-b)>=3 && s!==back.shape);
         if(role==="TRUE"){
-          if(prompt==="Same") cur.shape.scale = b;
-          if(prompt==="Smaller") cur.shape.scale = smaller.length? pick(smaller) : b;
-          if(prompt==="Bigger") cur.shape.scale = bigger.length? pick(bigger) : b;
+          if(prompt==="Same") cur.shape = back.shape;
+          if(prompt==="Fewer") cur.shape = fewer.length? pick(fewer) : back.shape;
+          if(prompt==="More") cur.shape = more.length? pick(more) : back.shape;
         }else if(role==="LURE"){
-          cur.shape.scale = adj.length? pick(adj) : (far.length ? pick(far) : b);
-          if(prompt==="Same" && cur.shape.scale===b){
-            cur.shape.scale = adj.length? pick(adj) : far.length ? pick(far) : b;
+          cur.shape = adj.length? pick(adj) : (far.length ? pick(far) : back.shape);
+          if(prompt==="Same" && cur.shape===back.shape){
+            cur.shape = adj.length? pick(adj) : far.length ? pick(far) : back.shape;
           }
         }else{
-          cur.shape.scale = far.length ? pick(far) : adj.length ? pick(adj) : b;
+          cur.shape = far.length ? pick(far) : adj.length ? pick(adj) : back.shape;
         }
       }
     }
@@ -543,7 +617,7 @@
       const T = seq.length;
       const candidateIdxs = Array.from({length: T - n}, (_,k)=> k + n);
       relations.forEach(rel=>{
-        const p = Array.from({length: T}, ()=> pick(PROMPTS[rel]));
+        const p = balancedPick(PROMPTS[rel], T);
         const idxs = candidateIdxs.slice(); shuffle(idxs);
         const numTrue = Math.round(idxs.length * (truePct/100));
         const numLure = Math.round(idxs.length * (lurePct/100));
@@ -560,6 +634,10 @@
         }
         prompts[rel] = p;
       });
+      // Add multiTrue flag
+      for(const i of candidateIdxs){
+        seq[i].multiTrue = relations.filter(rel => seq[i]._trial[rel].role === "TRUE").length > 1;
+      }
       return prompts;
     }
     // UI build: 3x3 grid
@@ -584,36 +662,42 @@
       const cell = cells.find(c => Number(c.dataset.x)===px && Number(c.dataset.y)===py);
       if(!cell) return;
       cell.classList.add("active");
-      // Draw shape with scale and color
-      const scale = item.shape.scale;// 1..3
-      const sz = 26 + scale*14; // 40..68 approx
+      // Draw shape with color
+      let sz = 60; // increased base size for consistency
       let color = item.color;
       if($("#colorblind").checked){
-        const hsl = hexToHsl(color);
-        color = hslToHex({h: hsl.h, s: 0, l: hsl.l}); // Grayscale
+        color = color; // already set to white/dark grey
       }
-      if(item.shape.type==="circle"){
+      const shapeContainer = document.createElement("div");
+      shapeContainer.style.width = sz + "px";
+      shapeContainer.style.height = sz + "px";
+      shapeContainer.style.display = "flex";
+      shapeContainer.style.alignItems = "center";
+      shapeContainer.style.justifyContent = "center";
+      if(item.shape==="circle"){
         const d = document.createElement("div");
-        d.className="dot";
-        d.style.width = d.style.height = sz+"px";
-        d.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${color})`;
+        d.style.width = sz+"px";
+        d.style.height = sz+"px";
+        d.style.background = color;
+        d.style.borderRadius = "50%";
         d.style.boxShadow = "0 10px 30px rgba(0,0,0,0.35)";
-        cell.appendChild(d);
-      } else if(item.shape.type==="square"){
+        shapeContainer.appendChild(d);
+      } else if(item.shape==="square"){
         const d = document.createElement("div");
         d.style.width=sz+"px"; d.style.height=sz+"px"; d.style.background=color; d.style.borderRadius="10px";
         d.style.boxShadow="0 10px 30px rgba(0,0,0,0.35)";
-        cell.appendChild(d);
+        shapeContainer.appendChild(d);
       } else { // triangle
         const d = document.createElement("div");
-        const half = Math.round(sz*0.55);
+        const side = sz; // match size
         d.style.width="0"; d.style.height="0";
-        d.style.borderLeft=half+"px solid transparent";
-        d.style.borderRight=half+"px solid transparent";
-        d.style.borderBottom=(half*2)+"px solid "+color;
+        d.style.borderLeft=(side/2)+"px solid transparent";
+        d.style.borderRight=(side/2)+"px solid transparent";
+        d.style.borderBottom=side+"px solid "+color;
         d.style.transform="translateY(6px)";
-        cell.appendChild(d);
+        shapeContainer.appendChild(d);
       }
+      cell.appendChild(shapeContainer);
     }
     // Build relation buttons
     const relationBar = $("#relationBar");
@@ -633,6 +717,7 @@
       });
     }
     // State
+    const VERSION = "1.3";
     const state = {
       running:false,
       seq:[],
@@ -652,14 +737,15 @@
       respondedThisTrial: new Set(),
       perModStats: {}, // {rel:{hits,misses,fa,cr,rts:[]}}
       jitterOn:true,
-      adaptiveOn:false
+      adaptiveOn:false,
+      seed: null,
+      showFeedback: true
     };
     // Controls
     const nLevel = $("#nLevel");
     const stimMs = $("#stimMs");
     const isiMs = $("#isiMs");
     const len = $("#len");
-    const relationsInput = $("#relations");
     const matchRatio = $("#matchRatio");
     const lurePct = $("#lurePct");
     const dynamicLabels = $("#dynamicLabels");
@@ -669,6 +755,7 @@
     const soundOn = $("#soundOn");
     const voiceOn = $("#voiceOn");
     const colorblind = $("#colorblind");
+    const showFeedback = $("#showFeedback");
     const progressBar = $("#progressBar");
     const progressText = $("#progressText");
     const nLabel = $("#nLabel");
@@ -690,10 +777,7 @@
     const resetBtn = $("#resetBtn");
     function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
     function parseRelationsField(){
-      const raw = relationsInput.value.split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
-      const supported = ["position","sound","color","shape"];
-      const rels = raw.filter(r=> supported.includes(r));
-      return rels.length ? rels : supported; // Default to all if empty
+      return ["position","sound","color","shape"].filter(r => $(`#mod-${r}`).checked);
     }
     function ensureModStats(){
       state.relations.forEach(rel=>{
@@ -709,9 +793,13 @@
       state.strictWindow = strictWindow.checked;
       state.jitterOn = jitterOn.checked;
       state.adaptiveOn = adaptiveOn.checked;
+      state.showFeedback = showFeedback.checked;
       if(colorblind.checked && state.relations.includes("color")) {
         log("Colorblind mode on: Consider removing 'color' from modalities for better experience.");
         if(!voiceOn.checked) voiceOn.checked = true; // Auto-enable voice
+        COLORS = ["#ffffff", "#333333"];
+      } else {
+        COLORS = ["#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2"];
       }
       nLabel.textContent = state.n;
     }
@@ -721,7 +809,10 @@
         stimMs: stimMs.value,
         isiMs: isiMs.value,
         len: len.value,
-        relations: relationsInput.value,
+        modPosition: $("#mod-position").checked,
+        modSound: $("#mod-sound").checked,
+        modColor: $("#mod-color").checked,
+        modShape: $("#mod-shape").checked,
         matchRatio: matchRatio.value,
         lurePct: lurePct.value,
         dynamicLabels: dynamicLabels.checked,
@@ -730,7 +821,8 @@
         adaptiveOn: adaptiveOn.checked,
         soundOn: soundOn.checked,
         voiceOn: voiceOn.checked,
-        colorblind: colorblind.checked
+        colorblind: colorblind.checked,
+        showFeedback: showFeedback.checked
       }));
     }
     function loadSettings(){
@@ -741,7 +833,10 @@
         stimMs.value = d.stimMs || 1300;
         isiMs.value = d.isiMs || 300;
         len.value = d.len || 24;
-        relationsInput.value = d.relations || "position, sound, color, shape";
+        $("#mod-position").checked = d.modPosition ?? true;
+        $("#mod-sound").checked = d.modSound ?? true;
+        $("#mod-color").checked = d.modColor ?? true;
+        $("#mod-shape").checked = d.modShape ?? true;
         matchRatio.value = d.matchRatio || 33;
         lurePct.value = d.lurePct || 45;
         dynamicLabels.checked = d.dynamicLabels ?? true;
@@ -751,11 +846,16 @@
         soundOn.checked = d.soundOn ?? true;
         voiceOn.checked = d.voiceOn ?? false;
         colorblind.checked = d.colorblind ?? false;
+        showFeedback.checked = d.showFeedback ?? true;
       }
       refreshConfig();
     }
+    function toggleManualControls(show) {
+      $(".manual-controls").style.display = show ? "flex" : "none";
+    }
     function newSequence(){
       refreshConfig();
+      reseed();
       state.seq = Array.from({length: state.len}, ()=> generateItem());
       state.prompts = generatePromptsAndAdjust(state.seq, state.relations, state.n, state.matchRatio, state.lurePct);
       state.i = -1;
@@ -773,7 +873,7 @@
       clearCells();
       renderMetrics();
       trialCounter.textContent = "0";
-      log(`Sequence generated: len=${state.len}, N=${state.n}, rels=${state.relations.join("+")}, true≈${state.matchRatio}%, lure≈${state.lurePct}%`);
+      log(`Sequence generated: len=${state.len}, N=${state.n}, rels=${state.relations.join("+")}, true≈${state.matchRatio}%, lure≈${state.lurePct}%, seed=${state.seed}`);
     }
     function progress(idx){
       progressText.textContent = `${idx} / ${state.len}`;
@@ -791,7 +891,7 @@
       }
       if(voiceOn.checked && 'speechSynthesis' in window){
         const utt = new SpeechSynthesisUtterance();
-        utt.text = `Position ${posIndex(state.seq[i].position)}. Sound ${state.seq[i].sound}. Color ${state.seq[i].color.slice(1)}. Shape ${state.seq[i].shape.type} size ${state.seq[i].shape.scale}.`;
+        utt.text = `Position ${posIndex(state.seq[i].position)}. Sound ${state.seq[i].sound}. Color ${state.seq[i].color.slice(1)}. Shape ${state.seq[i].shape}.`;
         utt.rate = 1.2; // Slightly faster for training
         setTimeout(()=> speechSynthesis.speak(utt), 100); // Delay to avoid overlap with tone
       }
@@ -801,8 +901,8 @@
       if(i < n) return false;
       const prompt = state.prompts[rel][i];
       if(!prompt) return false;
-      const cur = state.seq[i][rel === "shape" ? "shape" : rel];
-      const prev = state.seq[i-n][rel === "shape" ? "shape" : rel];
+      const cur = state.seq[i][rel];
+      const prev = state.seq[i-n][rel];
       return Eval[rel](prompt, cur, prev);
     }
     function updateRelationButtons(){
@@ -812,19 +912,24 @@
         if(!btn) return;
         btn.querySelector(".title").textContent = rel.charAt(0).toUpperCase()+rel.slice(1);
         const sub = btn.querySelector(".sub");
+        let promptText = "...";
         if(dynamicLabels.checked){
           const prompt = state.prompts[rel]?.[i] ?? pick(PROMPTS[rel]);
           sub.textContent = prompt;
           sub.style.display = "inline-block";
+          promptText = prompt;
         }else{
           sub.textContent = "";
           sub.style.display = "none";
         }
+        btn.setAttribute("aria-label", `Press for ${rel} if ${promptText}`);
         btn.classList.remove("matching","pending");
         const isTrue = relationIsTrue(rel, i);
-        if(isTrue){
+        if(isTrue && !state.windowOpen && state.showFeedback){
           btn.classList.add("matching");
-          if(state.strictWindow && !state.windowOpen) btn.classList.add("pending");
+          if(state.strictWindow){
+            btn.classList.add("pending");
+          }
         }
         btn.setAttribute("data-key", String((idx+1)%10 || 0));
       });
@@ -864,9 +969,14 @@
       ensureModStats();
       const rows = state.relations.map(rel=>{
         const {d,c} = dPrimeFor(rel);
-        const rts = state.perModStats[rel].rts;
-        const meanRt = rts.length ? Math.round(rts.reduce((a,b)=>a+b,0)/rts.length) : 0;
-        return `${rel.padEnd(8)} d'=${d.toFixed(2)} c=${c.toFixed(2)} RT≈${meanRt}ms`;
+        const s = state.perModStats[rel];
+        const Hn = s.hits + s.misses;
+        const Fn = s.fa + s.cr;
+        const missRate = Hn ? (s.misses / Hn * 100).toFixed(0) : 0;
+        const faRate = Fn ? (s.fa / Fn * 100).toFixed(0) : 0;
+        const rts = state.perModStats[rel].rts.slice().sort((a,b)=>a-b);
+        const medianRt = rts.length ? rts[Math.floor(rts.length/2)] : 0;
+        return `${rel.padEnd(8)} d'=${d.toFixed(2)} c=${c.toFixed(2)} FA=${faRate}% Miss=${missRate}% RT≈${medianRt}ms`;
       });
       metricsEl.textContent = rows.join("\n");
     }
@@ -895,10 +1005,12 @@
       updateSdt(rel, hit, i, rt);
       renderMetrics();
       const btn = relationBar.querySelector(`.rel-btn[data-rel="${rel}"]`);
-      if(btn){
+      if(btn && state.showFeedback){
         if(hit) btn.classList.add("matching");
         btn.animate([{transform:"scale(1)"},{transform:"scale(0.96)"},{transform:"scale(1)"}], {duration:120});
       }
+      ariaAnnounce.textContent = hit ? "Correct" : "Incorrect";
+      if("vibrate" in navigator) navigator.vibrate(10);
       log(`${hit? "HIT":"MISS"} on ${rel} with prompt "${state.prompts[rel][i] || "?"}" @ t=${i} (N=${state.n}) RT=${Math.round(rt)}ms`);
     }
     function respondNoMatch(){
@@ -916,7 +1028,12 @@
     }
     // Loop
     let stepTimeout = null;
-    const jitterFn = (v)=> state.jitterOn ? Math.max(100, Math.round(v * (0.8 + rng()*0.4))) : v; // Balanced jitter
+    const jitterFn = (v)=> {
+      if(!state.jitterOn) return v;
+      const band = v < 500 ? 0.1 : 0.2;
+      const minF = 1 - band, maxF = 1 + band;
+      return Math.max(100, Math.round(v * (minF + rng() * (maxF - minF))));
+    };
     function runLoop(){
       if(!state.running) return;
       state.i += 1;
@@ -948,6 +1065,7 @@
     }
     function finish(){
       state.running = false;
+      toggleManualControls(true);
       startBtn.disabled = false;
       stopBtn.disabled = true;
       undoBtn.disabled = false;
@@ -964,6 +1082,7 @@
       refreshConfig();
       if(state.seq.length !== state.len) newSequence();
       state.running = true;
+      toggleManualControls(false);
       startBtn.disabled = true;
       stopBtn.disabled = false;
       undoBtn.disabled = true;
@@ -975,6 +1094,7 @@
     }
     function stop(){
       state.running = false;
+      toggleManualControls(true);
       clearTimeout(stepTimeout);
       closeWindow();
       startBtn.disabled = false;
@@ -1064,10 +1184,12 @@
       // Weakest modality drives adaptation
       sampled.sort((a,b)=> a.d - b.d);
       const weak = sampled[0];
+      const s = state.perModStats[weak.rel];
+      const Hn = s.hits + s.misses;
+      const Fn = s.fa + s.cr;
+      if(Hn < 40 || Fn < 40) return;
       const dTarget = 1.1; // Slightly lower for more progression
-      const s = state.perModStats[weak.rel] || {fa:0,cr:0};
-      const F = s.fa + s.cr;
-      const faRate = F ? s.fa / F : 0;
+      const faRate = Fn ? s.fa / Fn : 0;
       const canIncrease = weak.d > dTarget && faRate <= 0.15 && weak.c < 0.5; // Not too biased
       const shouldDecrease = weak.d < dTarget*0.6 || weak.c > 0.5; // Decrease if biased conservative
       let changed = false;
@@ -1093,6 +1215,12 @@
         return;
       }
       if(e.key.toLowerCase()==="n"){ e.preventDefault(); respondNoMatch(); return; }
+      if(e.key === "?") {
+        e.preventDefault();
+        const h = $("#helpOverlay");
+        h.style.display = h.style.display === "none" ? "block" : "none";
+        return;
+      }
       const k = e.key;
       const btn = $(`.rel-btn[data-key="${k}"]`);
       if(btn){ e.preventDefault(); tryRespond(btn.dataset.rel); }
@@ -1105,6 +1233,15 @@
     adaptiveOn.addEventListener("change", ()=>{ state.adaptiveOn = adaptiveOn.checked; saveSettings(); });
     voiceOn.addEventListener("change", saveSettings);
     colorblind.addEventListener("change", ()=>{ saveSettings(); refreshConfig(); newSequence(); });
+    showFeedback.addEventListener("change", ()=>{ state.showFeedback = showFeedback.checked; saveSettings(); });
+    ["position","sound","color","shape"].forEach(mod => {
+      $(`#mod-${mod}`).addEventListener("change", () => {
+        if(state.running) return;
+        buildRelationButtons(parseRelationsField());
+        newSequence();
+        saveSettings();
+      });
+    });
     startBtn.onclick = start;
     stopBtn.onclick = stop;
     stepBtn.onclick = stepOnce;
@@ -1116,25 +1253,44 @@
     repeatBtn.onclick = repeatStim;
     clearBtn.onclick = clearPrompts;
     exportBtn.onclick = ()=>{
-      const blob = new Blob([logEl.textContent], {type: "text/plain"});
+      let csv = "version,seed,i,N,modality,prompt,role,response,hit,RT,windowType,stimMs,isiMs,multiTrue\n";
+      const responsesByTrial = state.responses.reduce((acc,r)=>{ 
+        if(!acc[r.i]) acc[r.i] = [];
+        acc[r.i].push(r); 
+        return acc; 
+      },{});
+      for(let i=0; i<state.len; i++){
+        state.relations.forEach(rel=>{
+          const prompt = state.prompts[rel]?.[i] || "";
+          const role = state.seq[i]?._trial?.[rel]?.role || "";
+          const resp = responsesByTrial[i]?.find(r => r.rel === rel);
+          const response = resp ? "yes" : "no";
+          const hit = resp ? resp.hit : "";
+          const rt = resp ? Math.round(resp.rt) : "";
+          const multiTrue = state.seq[i]?.multiTrue ? 1 : 0;
+          csv += `${VERSION},${state.seed},${i},${state.n},${rel},${prompt},${role},${response},${hit},${rt},${state.strictWindow ? "strict" : "open"},${stimMs.value},${isiMs.value},${multiTrue}\n`;
+        });
+      }
+      const blob = new Blob([csv], {type: "text/csv"});
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `rnback_log_${new Date().toISOString().slice(0,10)}.txt`;
+      a.download = `rnback_${new Date().toISOString().slice(0,10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     };
     resetBtn.onclick = ()=>{ localStorage.removeItem("rnback_settings"); location.reload(); };
-    [nLevel, stimMs, isiMs, len, relationsInput, matchRatio, lurePct].forEach(el=>{
+    [nLevel, stimMs, isiMs, len, matchRatio, lurePct].forEach(el=>{
       el.addEventListener("change", ()=>{
         if(state.running) return;
-        if(el===relationsInput) buildRelationButtons(parseRelationsField());
         newSequence();
         saveSettings();
       });
     });
     // Init
     loadSettings();
+    toggleManualControls(true);
+    reseed();
     newSequence();
     // Expose for console
     window.RNBack = { state, newSequence, start, stop, stepOnce, backOnce, reseed };
