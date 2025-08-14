@@ -155,22 +155,30 @@
       .cell .dot { width: 80%; height: 80%; }
       .cell > div { max-width: 80%; max-height: 80%; }
     }
+   
     @media (max-width: 600px) {
-      #mod-composite {
-        /* This is the checkbox */
+      /* make sure we're wrapping */
+      .relation-bar { display: flex; flex-wrap: wrap; }
+
+      /* reset ordering just in case */
+      .relation-bar .rel-btn { order: 0; }
+
+      /* force a line break BEFORE the composite button */
+      .relation-bar::after {
+        content: "";
+        flex-basis: 100%;  /* creates a full-width flex item = line break */
+        order: 1;
       }
-      /* Select the .row that contains it and make it full width */
-      #mod-composite:checked,
-      #mod-composite:not(:checked) {
-        /* no effect */
-      }
-      /* Instead, target the label and .row directly */
-      label[for="mod-composite"] {
-        display: block;
-        margin-top: 15px;
-        width: 100%;
+
+      /* put the composite button after that break, with a 15px gap */
+      .relation-bar .rel-btn[data-rel="composite"] {
+        order: 2;          /* comes after the break */
+        margin-top: 60px;  /* spacing you wanted */
+        /* keep its natural width (same as others) */
+        flex-basis: auto;
       }
     }
+
   </style>
   <meta name="description" content="Relational N-Back trainer with dynamic relation prompts on classic modality buttons. Position SameRow/SameCol/Closer/Farther, Sound Before/Same/After, Color Same/Opposite (true complement), Shape Fewer/Same/More sides." />
   <meta name="theme-color" content="#0f1220" />
@@ -1392,4 +1400,3 @@
   </script>
 </body>
 </html>
-
